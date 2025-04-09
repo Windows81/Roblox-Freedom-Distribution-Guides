@@ -1,3 +1,10 @@
+The following methods had their security permissions changed between vanilla Rōblox (v348 and v463) and RFD:
+
+- `InsertService:CreateMeshPartAsync`
+  - changed from `PluginSecurity` to `None` because Rōblox Corporation [made the same change in v649](https://robloxapi.github.io/ref/updates/2024.html#version-7cc6d2bdac2f4837-8).
+- `MarketplaceService:GetRobuxBalance`
+  - changed from `RobloxScript` to `None` (client only) to give developers greater control over their in-game economies.
+
 ## Findings
 
 Some properties on Rōblox are not available for developer-made scripts.
