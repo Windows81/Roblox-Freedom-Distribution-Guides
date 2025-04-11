@@ -1,6 +1,11 @@
+Difficult patch.
+
 This guide is only currently applicable for v463.
 
-## Findings for v463
+Prepared patches are availble, assuming that [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
+
+- [[RCC]](v463-rcc.1337)
+- [[Player]](v463-player.1337)
 
 I wanted to use an FFlag initialised but not _really_ being used anywhere. For v463, I chose `FFlag::Q220PermissionsSettings` after my own personal research.
 
