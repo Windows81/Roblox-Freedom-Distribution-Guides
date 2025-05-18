@@ -24,7 +24,7 @@ These are the enum values which correspond to different security contexts ([sour
 ```cpp
 		typedef enum {
 			None				=0,     // Any identity can access this feature, including in-game scripts
-            Plugin              =1,     // Second-lowest access level, just above in-game script
+			Plugin		 	=1,     // Second-lowest access level, just above in-game script
 			RobloxPlace			=2,     // A Roblox place that we own. Therefore scripts are more trusted and we allow
 										// preliminary features
 			LocalUser			=3,     // non-game permission. Usually for IDE

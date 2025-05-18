@@ -9,9 +9,9 @@ Prepared patches are availble, assuming that [you have ASLR disabled](https://gi
 
 I wanted to use an FFlag initialised but not _really_ being used anywhere. For v463, I chose `FFlag::Q220PermissionsSettings` after my own personal research.
 
-However, we'll be messing with some behaviour from `FFlag::ParallelLua` by overwriting some of its branch logic.
+However, we'll be causing undefined behaviour with `FFlag::ParallelLua` by overwriting some of the branch logic it uses.
 
-These steps can be followed for both RCC and the client to achieve your desired result.
+These steps should be followed for both RCC and the client to achieve your desired result.
 
 1. Before anything else, make sure [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
 
@@ -25,13 +25,17 @@ These steps can be followed for both RCC and the client to achieve your desired 
 
 4. Add a breakpoint at function entry (`push ebp`).
 
-5. Run a command to trigger the error message. Perhaps something like:
+5. Run a command in the dev console to trigger the error message. Perhaps something like:
 
 ```lua
 game.HttpService:RequestInternal({Url = "https://google.com"}):Start(function(success, dataTable) print(success) end)
 ```
 
 6. Once the breakpoint is hit, go one level up the call stack.
+
+---
+
+###
 
 7. FFlag values are often stored in static memory addresses. Locate the address for `Q220PermissionsSettings`.
    - To do this, you'd want to search for user-module code referencing the `Q220PermissionsSettings` string.
@@ -56,8 +60,6 @@ game.HttpService:RequestInternal({Url = "https://google.com"}):Start(function(su
 004E49CC | CC                       | int3                                    |
 004E49CD | CC                       | int3                                    |
 ```
-
----
 
 8. Apply the following patches, keeping in mind to
 

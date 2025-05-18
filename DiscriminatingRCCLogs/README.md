@@ -28,7 +28,7 @@ Consult [this text file](./flogs-sitetest4.txt).
 
 I've also added FLog names such as `Output` and `RCCServiceJobs` since they show up a lot in my logs for 2021E servers.
 
-Just to make sure, I kept track of which FFlags are used the most. This is done by counting how many times each FFlag appears in [a typical log file](./dev_20241211T185113Z_RCC_11372_last.log).
+Just to make sure, I kept track of which FFlags are used the most. This is done by counting how many times each FFlag appears in [a typical 2021E log file](./dev_20241211T185113Z_RCC_11372_last.log).
 
 ```py
 import re, collections
@@ -64,6 +64,10 @@ You can define these values in the following files:
 
 - For 2018M: `./ClientSettings/RCCService.json`
 - For 2021E: `./DevSettingsFile.json`
+
+---
+
+I had to remove `"FFLogOutlineBrightnessMax"`, `"FFLogOutlineBrightnessMin"`, and `"FFLogOutlineThickness"` since [they mess with rendering materials in my 2018M build](https://github.com/Windows81/Roblox-Freedom-Distribution/issues/41).
 
 ## What I did next
 
