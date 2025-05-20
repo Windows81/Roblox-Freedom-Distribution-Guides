@@ -166,9 +166,6 @@ MaxJoinDataSizeKB
 NetworkJoin
 R15Character
 LuaAssert
-OutlineBrightnessMax
-OutlineBrightnessMin
-OutlineThickness
 ServiceCreation
 ServiceVectorResize
 AuthenticationHelper
