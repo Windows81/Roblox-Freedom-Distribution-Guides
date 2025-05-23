@@ -1,3 +1,10 @@
+Prepared patches are availble, assuming that [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
+
+- [[RCC]](v463-rcc.1337)
+- [[Player]](v463-player.1337)
+
+# So We Had Gamepass Problems on 2021E...
+
 ![alt text](image.png)
 
 Rōblox Freedom Distribution is designed to be compatible with whatever server endpoint you use. However, the Rōblox binaries do not always co-operate with our project's design choices.
@@ -36,13 +43,91 @@ cmovne  eax, ecx
 
 3. Go up about 10 lines and change the first `je` statement into a `jmp`.
 
+---
+
+1. Search for user-module references to `"about:blank"`.
+
+   - There will be one result.
+   - In my case, it is at `014D12B3`.
+
+2. Go up about 6 statements to the most recent `call` routine _and follow its address_:
+
+   - In my case, it is at `014CED40`.
+
+```
+014D129C | E8 9FDAFFFF              | call    robloxplayerbeta.014CED40                                |
+014D12A1 | 83C4 08                  | add     esp, 0x8                                                 |
+014D12A4 | 84C0                     | test    al, al                                                   |
+014D12A6 | 0F84 A9010000            | je      robloxplayerbeta.14D1455                                 |
+014D12AC | 32DB                     | xor     bl, bl                                                   |
+014D12AE | E9 A4010000              | jmp     robloxplayerbeta.14D1457                                 |
+014D12B3 | B9 387B1A02              | mov     ecx, robloxplayerbeta.21A7B38                            | 21A7B38:"about:blank"
+```
+
+3. Apply the following patch to make the function simply return `1` in all cases.
+
+```patch
+- 014CED40 | 55                       | push    ebp                                                      |
+- 014CED41 | 8BEC                     | mov     ebp, esp                                                 |
++ 014CED40 | B0 01                    | mov     al, 0x1                                                  |
++ 014CED42 | C3                       | ret                                                              |
+014CED43 | 807D 0C 00               | cmp     byte ptr ss:[ebp + 0xC], 0x0                             |
+
+---
+
+1. Search for user-module references to `"HttpRequest.Url is not trusted"`.
+   - There will be one result.
+   - In my case, it is at `00C59440`.
+
+```
+
+00C59436 | 68 943EFD01 | push robloxplayerbeta.1FD3E94 | 1FD3E94:"Unrecognized request option %s"
+00C5943B | E8 B0228C00 | call robloxplayerbeta.151B6F0 |
+00C59440 | 68 B43EFD01 | push robloxplayerbeta.1FD3EB4 | 1FD3EB4:"HttpRequest.Url is not trusted"
+00C59445 | E8 A6228C00 | call robloxplayerbeta.151B6F0 |
+00C5944A | E8 F451CC00 | call robloxplayerbeta.191E643 |
+00C5944F | 68 D43EFD01 | push robloxplayerbeta.1FD3ED4 | 1FD3ED4:"HttpRequest.Priority must be a float"
+00C59454 | E8 97228C00 | call robloxplayerbeta.151B6F0 |
+00C59459 | 68 C8FAEA01 | push robloxplayerbeta.1EAFAC8 | 1EAFAC8:"Variant cast failed"
+00C5945E | E8 8D228C00 | call robloxplayerbeta.151B6F0 |
+00C59463 | E8 DB51CC00 | call robloxplayerbeta.191E643 |
+00C59468 | 68 FC3EFD01 | push robloxplayerbeta.1FD3EFC | 1FD3EFC:"HttpRequest.Timeout must be a number"
+00C5946D | E8 7E228C00 | call robloxplayerbeta.151B6F0 |
+00C59472 | 68 C8FAEA01 | push robloxplayerbeta.1EAFAC8 | 1EAFAC8:"Variant cast failed"
+00C59477 | E8 74228C00 | call robloxplayerbeta.151B6F0 |
+00C5947C | 68 243FFD01 | push robloxplayerbeta.1FD3F24 | 1FD3F24:"HttpRequest.CachePolicy must be an Enum.HttpCachePolicy"
+00C59481 | E8 6A228C00 | call robloxplayerbeta.151B6F0 |
+00C59486 | 68 C8FAEA01 | push robloxplayerbeta.1EAFAC8 | 1EAFAC8:"Variant cast failed"
+00C5948B | E8 60228C00 | call robloxplayerbeta.151B6F0 |
+00C59490 | 68 5C3FFD01 | push robloxplayerbeta.1FD3F5C | 1FD3F5C:"HttpRequest.RequestType must be an Enum.HttpRequestType"
+00C59495 | E8 56228C00 | call robloxplayerbeta.151B6F0 |
+00C5949A | 68 C8FAEA01 | push robloxplayerbeta.1EAFAC8 | 1EAFAC8:"Variant cast failed"
+00C5949F | E8 4C228C00 | call robloxplayerbeta.151B6F0 |
+
+````
+
+2. Find references to the address of the `push` statement (in my case, `00C59440`).
+
+   - There will also be one result (`je 00C59440` at `00C58E43`).
+
+3. Replace the `je` statement with `nop`.
+
+```patch
+00C58E41 | 84C0                     | test    al, al                                                   |
+- 00C58E43 | 0F84 F7050000            | je      robloxplayerbeta.C59440                                  |
++ 00C58E43 | 90                       | nop                                                              |
++ 00C58E44 | 90                       | nop                                                              |
++ 00C58E45 | 90                       | nop                                                              |
++ 00C58E46 | 90                       | nop                                                              |
++ 00C58E47 | 90                       | nop                                                              |
++ 00C58E48 | 90                       | nop                                                              |
+00C58E49 | 8B7D 0C                  | mov     edi, dword ptr ss:[ebp + 0xC]                            |
+00C58E4C | 8D4D C4                  | lea     ecx, dword ptr ss:[ebp - 0x3C]                           |
+````
+
 ## How We Got Here
 
-**This guide is incomplete as 2025-05-20.** The API endpoints now work. But we have one more problem.
-
-One of the other endpoints we need `/users/account-info` does not pass in a `Roblox-Session-Id` header. By definition, `Roblox-Session-Id` contains user authentication data that comes from the client.
-
-However, the Rōblox client is not designed to work with servers other than Rōblox and will assume that your server is an external website (even though it isn't).
+This tok me over a month to complete.
 
 ### Early CoreScript Analysis
 
@@ -235,7 +320,7 @@ In the decompiled-by-IDA v548:
   }
 ```
 
-That same string can be found in x32dbg when I open the v463 `RCCService.exe`
+That same string can be found in x32dbg when I open the v463 `RCCService.exe`:
 
 ```
 014FE445 | 68 1833AC01 | push rccservice.1AC3318 | 1AC3318:"[DFLog::HttpTraceLight] Attempting to call HttpClient::send() during global destruction"
@@ -422,6 +507,148 @@ curl_set_opt 2777 C7D2B00 [\xC89\xAC\x01]
 
 The option `2751` (enum value `CURLoption::CURLOPT_CAINFO`) appears when using `HttpService`. When I patch the program to _not_ use `CURLOPT_CAINFO`, _nothing_ changes.
 
-But the option `4E2B` (`CURLoption::CURLOPT_OPENSOCKETFUNCTION` exists for both **and** they differ between the two dumps.
+But the option `4EC3` (`CURLoption::CURLOPT_OPENSOCKETFUNCTION`) exists for both **and** they differ between the two dumps.
 
 **This is what turns out to be the final culprit.**
+
+### Not Excluding Rōblox-session Cookies
+
+The API endpoints are now reachable. But we have one more problem.
+
+One of the endpoints we need on the clients' side (`/users/account-info`) does not pass in a `Roblox-Session-Id` header. This is very important because `Roblox-Session-Id` contains user authentication data that lets the server determine which client is sending requests.
+
+Why?
+
+The Rōblox client is not designed to connect with HTTPS hosts other than Rōblox.com. So it will assume that your RFD server is an external website (even though it isn't).
+
+There is a function which makes this determination: `RBX::Http::isExternalUrl`. An IDA decompilation from v548 is shown below:
+
+```cpp
+_BOOL8 __fastcall RBX::Http::isExternalUrl(const RBX::StringView *url)
+{
+  RBX::Url *v1; // rbx
+  bool v2; // bl
+  RBX::StringView v4; // [rsp+20h] [rbp-B8h] BYREF
+  RBX::PluginDragImpl v5; // [rsp+30h] [rbp-A8h] BYREF
+
+  v4 = *url;
+  v1 = RBX::Url::fromString((RBX::Url *)&v5, &v4);
+  v2 = RBX::Url::hasHttpScheme(v1) && !RBX::Http::isStrictlyRobloxSite(v1, 0);
+  RBX::Url::~Url(&v5);
+  return v2;
+}
+```
+
+It basically wraps itself around a call to `RBX::Http::isStrictlyRobloxSite`.
+
+I am deciding to patch this method so that `isStrictlyRobloxSite` always returns `true` (i.e., all hosts are treated like they're from Rōblox.com) for the reasons:
+
+- it's easier to patch,
+- it gives up certain RFD security features in exchange for server freedom,
+- and games can utilise load-balancing domains without any difference to the content of their requests.
+
+#### How to Find `isStrictlyRobloxSite`
+
+There is some weird snippet of code in v548 which gives us a good hint:
+
+```cpp
+  if ( externalRequest )
+  {
+    if ( RBX::Url::hasHttpScheme((RBX::Url *)v21) )
+      RBX::Http::isStrictlyRobloxSite((const RBX::Url *)v21, 0);
+  }
+  else if ( strcmp_0(url, "about:blank") )
+```
+
+This tells us that there is a call just above the (one and only) string reference to `"about:blank"`.
+
+This looks roughly equivalent (in the v463 Client) to:
+
+```
+014D127E | 74 33                    | je      robloxplayerbeta.14D12B3                                 |
+014D1280 | 8D8D 78FFFFFF            | lea     ecx, dword ptr ss:[ebp - 0x88]                           |
+014D1286 | E8 8550AFFF              | call    robloxplayerbeta.FC6310                                  |
+014D128B | 84C0                     | test    al, al                                                   |
+014D128D | 0F84 BE010000            | je      robloxplayerbeta.14D1451                                 |
+014D1293 | 8D85 78FFFFFF            | lea     eax, dword ptr ss:[ebp - 0x88]                           | eax:AmdPowerXpressRequestHighPerformance+26A80
+014D1299 | 6A 00                    | push    0x0                                                      |
+014D129B | 50                       | push    eax                                                      | eax:AmdPowerXpressRequestHighPerformance+26A80
+014D129C | E8 9FDAFFFF              | call    robloxplayerbeta.014CED40                                |
+014D12A1 | 83C4 08                  | add     esp, 0x8                                                 |
+014D12A4 | 84C0                     | test    al, al                                                   |
+014D12A6 | 0F84 A9010000            | je      robloxplayerbeta.14D1455                                 |
+014D12AC | 32DB                     | xor     bl, bl                                                   |
+014D12AE | E9 A4010000              | jmp     robloxplayerbeta.14D1457                                 |
+014D12B3 | B9 387B1A02              | mov     ecx, robloxplayerbeta.21A7B38                            | 21A7B38:"about:blank"
+014D12B8 | 8BC6                     | mov     eax, esi                                                 | eax:AmdPowerXpressRequestHighPerformance+26A80
+014D12BA | 66:0F1F4400 00           | nop     word ptr ds:[eax + eax], ax                              |
+014D12C0 | 8A10                     | mov     dl, byte ptr ds:[eax]                                    | eax:AmdPowerXpressRequestHighPerformance+26A80
+014D12C2 | 3A11                     | cmp     dl, byte ptr ds:[ecx]                                    |
+014D12C4 | 75 1A                    | jne     robloxplayerbeta.14D12E0                                 |
+```
+
+Where `014D129C` is the address of where we find the call to `RBX::Http::isStrictlyRobloxSite`.
+
+And where `014CED40` is the address which `eip` goes to.
+
+We apply the following patch, making the function simply return `1` in all cases.
+
+```patch
+- 014CED40 | 55                       | push    ebp                                                      |
+- 014CED41 | 8BEC                     | mov     ebp, esp                                                 |
++ 014CED40 | B0 01                    | mov     al, 0x1                                                  |
++ 014CED42 | C3                       | ret                                                              |
+014CED43 | 807D 0C 00               | cmp     byte ptr ss:[ebp + 0xC], 0x0                             |
+```
+
+#### Patching `RequestInternal` Trust-Check
+
+Whenever you call `HttpService::RequestInternal` using an 'untrusted' host, we throw the following error `HttpRequest.Url is not trusted`.
+
+1. Search for user-module references to `"HttpRequest.Url is not trusted"`.
+   - There will be one result.
+   - Our address-to-note is `00C59440`.
+
+```
+00C59436 | 68 943EFD01              | push    robloxplayerbeta.1FD3E94                                 | 1FD3E94:"Unrecognized request option %s"
+00C5943B | E8 B0228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C59440 | 68 B43EFD01              | push    robloxplayerbeta.1FD3EB4                                 | 1FD3EB4:"HttpRequest.Url is not trusted"
+00C59445 | E8 A6228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C5944A | E8 F451CC00              | call    robloxplayerbeta.191E643                                 |
+00C5944F | 68 D43EFD01              | push    robloxplayerbeta.1FD3ED4                                 | 1FD3ED4:"HttpRequest.Priority must be a float"
+00C59454 | E8 97228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C59459 | 68 C8FAEA01              | push    robloxplayerbeta.1EAFAC8                                 | 1EAFAC8:"Variant cast failed"
+00C5945E | E8 8D228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C59463 | E8 DB51CC00              | call    robloxplayerbeta.191E643                                 |
+00C59468 | 68 FC3EFD01              | push    robloxplayerbeta.1FD3EFC                                 | 1FD3EFC:"HttpRequest.Timeout must be a number"
+00C5946D | E8 7E228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C59472 | 68 C8FAEA01              | push    robloxplayerbeta.1EAFAC8                                 | 1EAFAC8:"Variant cast failed"
+00C59477 | E8 74228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C5947C | 68 243FFD01              | push    robloxplayerbeta.1FD3F24                                 | 1FD3F24:"HttpRequest.CachePolicy must be an Enum.HttpCachePolicy"
+00C59481 | E8 6A228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C59486 | 68 C8FAEA01              | push    robloxplayerbeta.1EAFAC8                                 | 1EAFAC8:"Variant cast failed"
+00C5948B | E8 60228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C59490 | 68 5C3FFD01              | push    robloxplayerbeta.1FD3F5C                                 | 1FD3F5C:"HttpRequest.RequestType must be an Enum.HttpRequestType"
+00C59495 | E8 56228C00              | call    robloxplayerbeta.151B6F0                                 |
+00C5949A | 68 C8FAEA01              | push    robloxplayerbeta.1EAFAC8                                 | 1EAFAC8:"Variant cast failed"
+00C5949F | E8 4C228C00              | call    robloxplayerbeta.151B6F0                                 |
+```
+
+2. Find references to the address of the `push` statement (in my case, `00C59440`).
+
+   - There will also be one result (`je 00C59440` at `00C58E43`).
+
+3. Replace the `je` statement with `nop`.
+
+```patch
+00C58E41 | 84C0                     | test    al, al                                                   |
+- 00C58E43 | 0F84 F7050000            | je      robloxplayerbeta.C59440                                  |
++ 00C58E43 | 90                       | nop                                                              |
++ 00C58E44 | 90                       | nop                                                              |
++ 00C58E45 | 90                       | nop                                                              |
++ 00C58E46 | 90                       | nop                                                              |
++ 00C58E47 | 90                       | nop                                                              |
++ 00C58E48 | 90                       | nop                                                              |
+00C58E49 | 8B7D 0C                  | mov     edi, dword ptr ss:[ebp + 0xC]                            |
+00C58E4C | 8D4D C4                  | lea     ecx, dword ptr ss:[ebp - 0x3C]                           |
+```
