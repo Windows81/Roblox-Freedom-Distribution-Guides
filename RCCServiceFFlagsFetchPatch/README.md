@@ -50,7 +50,7 @@ First things first, find a `js` instruction above these 6:
 00602565 | E8 D6FBFBFF              | call rccservice.5C2140                  |
 ```
 
-Select it, press space, change `js` to `jmp` and press OK. It must look like this now:
+Select it, press space, change `js` to `jmp` and press OK. We have patched the settings key fetch code. It must look like this now:
 
 ![js to jmp](x32dbg_pSA1G49CzI.png)
 
@@ -63,6 +63,8 @@ Select it, press space, change `0x00` to `edi` like the image below and press OK
 **WARNING: Make sure you have "Fill with NOP's" enabled, otherwise it will eat the "je" instruction!**
 
 ![edit](x32dbg_GQvDhqF59z.png)
+
+This patch makes the `cmp` instruction always true, so it continues to construct the "RCCService" string for it to be passed to the FFlag loader.
 
 You are done now. Press the band-aid icon in the topbar:
 
@@ -93,4 +95,3 @@ if (settingsKey.length() == 0)
     settingsKey = "RCCService" + settingsKey;
 }
 ```
-
