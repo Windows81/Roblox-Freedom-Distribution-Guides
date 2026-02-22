@@ -15,6 +15,7 @@ The best items contain "quick guides", along with a primer on how we reached our
 | Guide                                                                   | Completeness |
 | ----------------------------------------------------------------------- | ------------ |
 | [Add Custom Strings in 2021E](./AddStrings2021E)                        | 1.0          |
+| [Support `MessagingService`](./SupportMessagingService)                 | 0.6          |
 | [Force RCCService FFlags to Load](./RCCServiceFFlagsFetchPatch)         | 1.0          |
 | [Advanced Trust Check for 2018M](./AdvancedTrustCheck2018M)             | 0.4          |
 | [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E)             | 1.0          |
