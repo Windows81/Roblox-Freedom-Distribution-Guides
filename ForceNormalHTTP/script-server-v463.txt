@@ -1,0 +1,16 @@
+https_addr = 0x018F359C
+http_addr = 0x018F542C
+findallmem mod.main(), "68 {x:bswap(https_addr)}"
+i = 0
+loop:
+  addr = ref.addr(i)+1
+  i++
+  [addr] = http_addr
+
+  cmp byte(addr-2), 5
+  jne dec_l
+  [addr-2] -= 1
+  dec_l:
+
+  cmp i, ref.count()
+  jne loop

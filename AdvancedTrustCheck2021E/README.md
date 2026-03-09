@@ -18,7 +18,6 @@ Gamepasses and dev products don't work at all in 2021E (v463).
 1. Launch x32dbg.
 
 2. Search for string references to `"CURLOPT_OPENSOCKETFUNCTION"`.
-
    - You'll find four results; select the first one.
 
 3. Go up about 10 lines and look for disassembly that looks like:
@@ -40,7 +39,6 @@ cmovne  eax, ecx
 1. Launch x32dbg.
 
 2. Search for string references to `"CURLOPT_OPENSOCKETFUNCTION"`.
-
    - You'll find _one_ result in the client or _two_ in Studio. **Select the first one**.
 
 3. Go up about 10 lines and find a statement like `mov edx, 0x4EC3` (constant value must match).
@@ -50,12 +48,10 @@ cmovne  eax, ecx
 ### Part 2
 
 1. Search for user-module references to `"about:blank"`.
-
    - There will always be one result.
    - In client v463, it is at `014D12B3`.
 
 2. Go up about 6 statements (skipping the unconditional `jmp`) to the most recent `call` routine _and follow its address_:
-
    - In client v463, it is at `014CED40`.
 
 ```
@@ -110,7 +106,6 @@ cmovne  eax, ecx
 ```
 
 2. Find references to the address of the `push` statement (in client v463, `00C59440`).
-
    - In the v463 client, there will be one result (`je 00C59440` at `00C58E43`).
    - If there is no result (as in Studio), you can completely ignore the procedure.
 
@@ -450,7 +445,7 @@ For example, in [the 2016 source code](https://github.com/Jxys3rrV/roblox-2016-s
 logCurlError("CURLOPT_FOLLOWLOCATION", curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1));
 ```
 
-Which corresponds, in the compiled RobloxPlayerBeta v463, to:
+Which corresponds, in the compiled `RobloxPlayerBeta.exe` v463, to:
 
 ```x86asm
 push 0
@@ -673,7 +668,6 @@ Whenever you call `HttpService::RequestInternal` using an 'untrusted' host, we t
 ```
 
 2. Find references to the address of the `push` statement (in my case, `00C59440`).
-
    - There will also be one result (`je 00C59440` at `00C58E43`).
 
 3. Replace the `je` statement with `nop`.
