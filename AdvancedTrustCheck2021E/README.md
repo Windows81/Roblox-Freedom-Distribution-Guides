@@ -439,7 +439,7 @@ How would we find `curl_easy_setopt`?
 
 The actual function which sets the `CURLOPT` isn't in the function call _below_ the string references, but instead above. That's because cURL options are actually defined as enum integers.
 
-For example, in [the 2016 source code](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/util/Shared/HttpPlatformImpl.cpp#L641):
+For example, in [the 2016 source code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/util/Shared/HttpPlatformImpl.cpp#L641):
 
 ```cpp
 logCurlError("CURLOPT_FOLLOWLOCATION", curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1));

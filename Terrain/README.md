@@ -20,7 +20,7 @@ Likely corresponds with the `SmoothGrid` property of `Terrain`.
 
 Deserialised from the internal C++ type `Voxel2::Grid`.
 
-To convert from `Voxel2::Grid` to the `BinaryString` we see in the `rbxl` format, [`void Grid::deserialize(const std::string& data)`](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/voxel2/Grid.cpp#L756) is used.
+To convert from `Voxel2::Grid` to the `BinaryString` we see in the `rbxl` format, [`void Grid::deserialize(const std::string& data)`](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/voxel2/Grid.cpp#L756) is used.
 
 ```cpp
 void Grid::deserialize(const std::string& data)

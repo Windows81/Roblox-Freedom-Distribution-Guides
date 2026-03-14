@@ -9,33 +9,27 @@ Let's fix it.
 1. Search in user-module string references for `"logs"`. Click any result.
 
 2. Navigate to the location of the next `call` through the disassembler.
-
    - If you happen to see a call to `GetModuleFileNameW` somewhere in the first 30 or so instructions, you're in the right place.
 
 3. Keep scrolling down until you find a reference to `SHGetFolderPathAndSubDir`.
-
    - In v348, it looks like `mov ebx,dword ptr ds:[<SHGetFolderPathAndSubDir>]`. This reference should only appear once in this entire function.
    - In v463, that instead is `call <JMP.&SHGetFolderPathAndSubDirW>`. Here, this `call` statement appears twice, with the first being about 10 instructions before the second. _Pick the second one_.
 
 4. Searching about 20 lines in either direction, keep a note of nearby statement(s) either like `or eax,1C` or `or ebx,23`.
-
    - **The constant must be `1C` or `23`**, but the specific register being used is not.
    - The statement also _must_ be an `or` statement.
    - If there are multiple, keep note of them all.
 
 5. Also keep a note of the offset of `ebp` for a particular string buffer whose address gets pushed into the stack.
-
    - In v348, the offset is `0x264` [from `lea ecx,dword ptr ss:[ebp-250]`].
    - In v463, the offset is `0x264` [from `lea ecx,dword ptr ss:[ebp-264]`].
 
 6. Surrounding the `or` statement(s) from step (4), fill all their surrounding instructions with `nop`.
-
    - If there are multiple from step (4), apply the same procedure each of these times.
    - Going up, keep noping until you find a statement like `jmp`, `jne`, `je`, etc.
    - Going down, keep noping until you find a line that _receives_ a branch.
 
 7. If step (6) yields multiple regions, bridge them with unconditional `jmp`.
-
    - For example, let's say that the final byte at one region has an address of `001B5C35`, and the first byte of the next region is `001B5C43`. Since the ranges are near each other, and short jumps take up two bytes, we occupy the last two bytes of the region (`001B5C34` thru `001B5C35`) with `jmp 001B5C43`.
 
 8. From there, insert the x86 instructions that I wrote in [Appendix A](#appendix-a). Each version of Rōblox operates completely differently. Even binaries of the same numbered version of Player, Studio, and RCC may differ.
@@ -46,7 +40,7 @@ This is by no means a complete guide. A lot of details are up to interpretation 
 
 ## Redirecting _Local_ AppData
 
-Look at this method [in the 2016 source](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/util/Win/FileSystem.cpp#L27C1-L27C99):
+Look at this method [in the 2016 source](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/util/Win/FileSystem.cpp#L27C1-L27C99):
 
 ```cpp
 boost::filesystem::path getUserDirectory(bool create, FileSystemDir dir, const char *subDirectory)
@@ -70,7 +64,7 @@ By default, if you are running a Rōblox executable at `C:\Users\USER\Projects\F
 
 We want these files to be saved at a relative path of the user's choosing. It can be controlled by a fast variable named `FStringUS20608`.
 
-Looking through other places in the codebase which call the method named `getUserDirectory`, I found [this](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/CSG/CSGKernel.cpp#L190):
+Looking through other places in the codebase which call the method named `getUserDirectory`, I found [this](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/CSG/CSGKernel.cpp#L190):
 
 ```cpp
 boost::filesystem::path path = RBX::FileSystem::getUserDirectory(true, RBX::DirAppData, "logs");
@@ -295,7 +289,7 @@ Credit to `ebkeyesa` and `ayoeggz` on Twitch for nothing.
 
 ### Additional Considerations
 
-In Studio (and only in Studio), there is a string `"/AppData/Local/Roblox"` included in compilation, as per [the 2016 source code](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/RobloxStudio/RobloxSettings.cpp#L81).
+In Studio (and only in Studio), there is a string `"/AppData/Local/Roblox"` included in compilation, as per [the 2016 source code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/RobloxStudio/RobloxSettings.cpp#L81).
 
 In my view, this is bad practice since the code reduplicates functionality of `getUserDirectory` to retrieve the path to `AppData/Local/Roblox`.
 

@@ -16,7 +16,7 @@ bool DataModel::uploadPlace(const std::string& uploadUrl, const SaveFilter saveF
         ...
 ```
 
-16src also uses [`/ide/publish/UploadExistingAsset`](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/v8datamodel/AssetService.cpp#L399). You'll only need to implement one endpoint across a lot of versions.
+16src also uses [`/ide/publish/UploadExistingAsset`](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/v8datamodel/AssetService.cpp#L399). You'll only need to implement one endpoint across a lot of versions.
 
 I'm working with 2018M and 2021E. Same URL for both.
 

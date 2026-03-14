@@ -1,8 +1,8 @@
-***Note:** This guide is not intended for Rōblox Freedom Distribution; it targets versions significantly older than 0.347 (released in July 2018).*
+**\*Note:** This guide is not intended for Rōblox Freedom Distribution; it targets versions significantly older than 0.347 (released in July 2018).\*
 
 We've included the guide anyways for anyone who may need it.
 
-Credit to *SomeoneInTheWorld* for being the original author (@yakovexplorer on GitHub).
+Credit to _SomeoneInTheWorld_ for being the original author (@yakovexplorer on GitHub).
 
 # Force ~2017 RCCService to Fetch FFlags
 
@@ -74,23 +74,24 @@ Click "Patch", and save the executable.
 
 ## Background
 
-This patch was derived from [the following code](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/RCCService/RCCServiceSoapServiceImpl.cpp#L1388C1-L1405C3) in the 2016 source:
+This patch was derived from [the following code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/RCCService/RCCServiceSoapServiceImpl.cpp#L1388C1-L1405C3) in the 2016 source:
+
 ```cpp
 if (settingsKey.length() == 0)
 {
   CRegKey key;
-  if (SUCCEEDED(key.Open(HKEY_LOCAL_MACHINE, "Software\\ROBLOX Corporation\\Roblox\\", KEY_READ))) 
+  if (SUCCEEDED(key.Open(HKEY_LOCAL_MACHINE, "Software\\ROBLOX Corporation\\Roblox\\", KEY_READ)))
   {
     CHAR keyData[MAX_PATH];
     ULONG bufLen = MAX_PATH-1;
-    if (SUCCEEDED(key.QueryStringValue("SettingsKey", keyData, &bufLen))) 
+    if (SUCCEEDED(key.QueryStringValue("SettingsKey", keyData, &bufLen)))
     {
       keyData[bufLen] = 0;
       settingsKey = std::string(keyData);
       FASTLOGS(FLog::RCCServiceInit, "Read settings key: %s", settingsKey);
     }
   }
-  
+
   if (settingsKey.length() != 0)
     settingsKey = "RCCService" + settingsKey;
 }

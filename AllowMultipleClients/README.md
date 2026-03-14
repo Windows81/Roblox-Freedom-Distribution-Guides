@@ -2,7 +2,7 @@
 
 ![alt text](image-4.png)
 
-The [2016 source code](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/WindowsClient/Application.cpp#L1187) tells us:
+The [2016 source code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/WindowsClient/Application.cpp#L1187) tells us:
 
 ```cpp
 void Application::waitForNewPlayerProcess(HWND hWnd)

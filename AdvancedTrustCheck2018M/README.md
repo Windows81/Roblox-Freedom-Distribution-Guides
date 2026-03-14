@@ -1,6 +1,6 @@
 In the 2016 source code, we have a function called
 
-https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/util/Shared/Http.cpp#L1096
+https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/util/Shared/Http.cpp#L1096
 
 ```cpp
 bool Http::isRobloxSite(const char* url)

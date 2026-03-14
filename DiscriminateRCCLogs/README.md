@@ -1,6 +1,6 @@
 So we need to extract every valid FLog setting.
 
-But we don't have the FFlags for 2018M available. But 16src has [this information](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/v8datamodel/FastLogSettings.cpp#L9) and more.
+But we don't have the FFlags for 2018M available. But 16src has [this information](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/v8datamodel/FastLogSettings.cpp#L9) and more.
 
 ## Where to get the flags from?
 

@@ -26,12 +26,10 @@ This practice is not recommended for most uses. However, RFD's current implement
 1. Search among user-referenced strings for `"CURLOPT_SSL_VERIFYPEER"` and `"CURLOPT_SSL_VERIFYHOST"`, taking into account for results from _both_ searches.
 
 2. For each result, navigating _up_ about 10 instructions until you find one until you see a constant value `0x40` or `0x51`.
-
    - Ex: `push 40`, `mov r8d, 51`, et c.
    - If one is not found, it is probably safe to skip to the next result.
 
 3. Look nearby for a statement which uses `1` or `2` as a constant value.
-
    - Ex: `push 1`, et c.
    - If one is not found **here**, best to set a breakpoint at the call that takes place _after_ and take other unexplained measures.
 
@@ -41,7 +39,7 @@ This practice is not recommended for most uses. However, RFD's current implement
 
 The actual function which sets the `CURLOPT` isn't in the function call _below_ the string references, but instead above. That's because cURL options are actually defined as enum integers.
 
-For example, in [the 2016 source code](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/util/Shared/HttpPlatformImpl.cpp#L641):
+For example, in [the 2016 source code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/util/Shared/HttpPlatformImpl.cpp#L641):
 
 ```cpp
 logCurlError("CURLOPT_FOLLOWLOCATION", curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1));

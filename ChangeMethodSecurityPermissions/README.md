@@ -19,7 +19,7 @@ Let's see what types of scripts can use this function:
 
 In 2021E (v463), that function is restricted to `PluginSecurity`. However, modern versions of Rōblox do not have this problem.
 
-These are the enum values which correspond to different security contexts ([source in 16src](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/include/security/SecurityContext.h#L14)):
+These are the enum values which correspond to different security contexts ([source in 16src](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/include/security/SecurityContext.h#L14)):
 
 ```cpp
 		typedef enum {
@@ -40,7 +40,7 @@ These are the enum values which correspond to different security contexts ([sour
 		} Permissions;
 ```
 
-Let's look at [a partial example](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/v8datamodel/InsertService.cpp#L79) of a method that exists in the 16src code: `InsertService:GetBaseCategories`.
+Let's look at [a partial example](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/v8datamodel/InsertService.cpp#L79) of a method that exists in the 16src code: `InsertService:GetBaseCategories`.
 
 ```
 ... "GetBaseCategories", Security::None, Reflection::Descriptor::Attributes::deprecated(func_GetDefaultSets ...
@@ -61,23 +61,19 @@ Note the highlighted `push 0`. The `0` corresponds to `Security::None`.
 To allow `InsertService:CreateMeshPartAsync` to be called by scripts with no special permissions, follow these steps:
 
 1. **Find References**:
-
    - Open `x32dbg`.
    - Search for the string `CreateMeshPartAsync`.
      ![Find references](image-4.png)
 
 2. **Locate Security Value**:
-
    - Follow the reference to where the function is defined.
    - Look for any `push` statements above it. The integer value should be between 0 and 6, corresponding to different security contexts.
      ![Read push statement](image-5.png)
 
 3. **Modify Security Value**:
-
    - Change that integer value to `0`, which corresponds to `Security::None`.
      ![Modify push statement](image-6.png)
 
 4. **Repeat for Both EXEs**:
-
    - This modification must be done separately for both the `RobloxPlayerBeta` and `RCCService` executables.
    - Perform the same steps in both places.

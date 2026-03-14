@@ -8,7 +8,7 @@ According to the 2016 source-code leak, Google Analytics is enabled only after:
 2. That `googleClientID` is converted to an integer and modulo'd by 100 to integer `lottery`, then
 3. The `lottery` value is greater than a certain `lotteryThreshold`.
 
-Here's my [source](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/util/RobloxGoogleAnalytics.cpp#L133C28-L164C6) and its [header](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/App/include/util/RobloxGoogleAnalytics.h#L39C4-L39C81):
+Here's my [source](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/util/RobloxGoogleAnalytics.cpp#L133C28-L164C6) and its [header](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/include/util/RobloxGoogleAnalytics.h#L39C4-L39C81):
 
 ```cpp
 void lotteryInit(const std::string &accountPropertyID, size_t maxThreadScheduleSize, int lotteryThreshold, const char * productName = NULL, int robloxAnalyticsLottery = -1, const std::string &sessionKey = "sessionID=")
@@ -44,7 +44,7 @@ The code above allows us to utilise an optional `robloxAnalyticsLottery` argumen
 
 ### Studio
 
-In Studio, we can modify `FIntStudioRobloxAnalyticsLoad` to be equal to 0. This _may_ work because, [here](https://github.com/Jxys3rrV/roblox-2016-source-code/blob/4de2dc3a380e1babe4343c49a4341ceac749eddb/RobloxStudio/RobloxMainWindow.cpp#L383):
+In Studio, we can modify `FIntStudioRobloxAnalyticsLoad` to be equal to 0. This _may_ work because, [here](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/RobloxStudio/RobloxMainWindow.cpp#L383):
 
 ```cpp
 RBX::RobloxGoogleAnalytics::lotteryInit(googleAnalyticsAccountPropId,
