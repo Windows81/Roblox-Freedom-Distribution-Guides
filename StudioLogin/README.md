@@ -8,7 +8,7 @@ I found a version of Studio from late 2021 ([v493.1.15175](https://archive.org/d
 
 When you launch v463 Studio without command-line arguments, you are presented with a login screen.
 
-![alt text](image.png)
+![](image.png)
 
 You may be tempted to try bypassing this through several methods:
 
@@ -20,7 +20,7 @@ You may be tempted to try bypassing this through several methods:
 
 ---
 
-![alt text](image-1.png)
+![](image-1.png)
 
 In the `RobloxStudioBeta.exe` v463 executable, there are no results for the string `"You must log in to create new files."`
 
@@ -105,5 +105,5 @@ We apply the following patch to ensure that the function always returns a truish
 +00000001405F2100 | 0C FF                    | or      al, 0xFF                        |
 +00000001405F2102 | 90                       | nop                                     |
 +00000001405F2103 | 90                       | nop                                     |
-00000001405F2104 | C3                       | ret                                     |
+ 00000001405F2104 | C3                       | ret                                     |
 ```

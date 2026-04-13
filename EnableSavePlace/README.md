@@ -3,9 +3,9 @@
 2021E (v463) patching. Replace `jne` to `jmp`.
 Notice that `[esi]:"https://localhost:2006/ide/publish/UploadExistingAsset?assetId=1818&isAppCreation=true"`
 
-![alt text](image.png)
+![](image.png)
 
-Corresponds here in [16src](https://github.com/Jxys3rrV/roblox-2016-source-code):
+Corresponds here in [16src](https://github.com/Artifaqt/ROBLOX2016):
 
 ```cpp
 bool DataModel::uploadPlace(const std::string& uploadUrl, const SaveFilter saveFilter, boost::function<void()> resumeFunction, boost::function<void(std::string)> errorFunction)
@@ -20,21 +20,21 @@ bool DataModel::uploadPlace(const std::string& uploadUrl, const SaveFilter saveF
 
 I'm working with 2018M and 2021E. Same URL for both.
 
-![alt text](image-2.png)
+![](image-2.png)
 
 If you use `game:SavePlace()` without any special patches, you get an error message:
 
-![alt text](image-3.png)
+![](image-3.png)
 
 Search all string through user modules and find that special string. It only appears when `game::SavePlace` is called.
 
-![alt text](image-4.png)
+![](image-4.png)
 
 ## Packages?
 
 I have another problem:
 
-![alt text](image-5.png)
+![](image-5.png)
 
 In my case: `https://localhost:2006/v1/places/1818/symbolic-links?sortOrder=Asc&limit=50`
 
@@ -101,7 +101,7 @@ I still needed to implement `/ide/publish/UploadExistingAsset`. **That's the act
 
 If you're using 2018M, it'll show you an error message. But not 2021E.
 
-![alt text](image-7.png)
+![](image-7.png)
 
 **Both 2018M and 2021E make the exact same calls to `https://localhost:2006/ide/publish/UploadExistingAsset?assetId=1818&isAppCreation=true`.**
 
@@ -123,6 +123,6 @@ def _(self: web_server_handler) -> bool:
     return True
 ```
 
-![alt text](image-8.png)
+![](image-8.png)
 
-According to [16src](https://github.com/Jxys3rrV/roblox-2016-source-code), if the file length is greater than 256 _bytes_ (`#define MIN_HTTP_COMPRESSION_SIZE 256`), you're gonna get a `gzip` stream. Do I expect to get a file stream smaller than that? Maybe. Maybe not.
+According to [16src](https://github.com/Artifaqt/ROBLOX2016), if the file length is greater than 256 _bytes_ (`#define MIN_HTTP_COMPRESSION_SIZE 256`), you're gonna get a `gzip` stream. Do I expect to get a file stream smaller than that? Maybe. Maybe not.

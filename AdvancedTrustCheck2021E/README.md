@@ -1,11 +1,11 @@
 Prepared patches are available, assuming that [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
 
-- [[RCC]](v463-server.1337)
-- [[Player]](v463-player.1337)
+- [`./v463-server.1337` (RCC)](./v463-server.1337)
+- [`./v463-player.1337` (Player)](./v463-player.1337)
 
 # So We Had Gamepass Problems on 2021E...
 
-![alt text](image.png)
+![](image.png)
 
 Rōblox Freedom Distribution is designed to be compatible with whatever server endpoint you use. However, the Rōblox binaries do not always co-operate with our project's design choices.
 
@@ -67,11 +67,11 @@ cmovne  eax, ecx
 3. Apply the following patch to make the function simply return `1` in all cases.
 
 ```patch
-- 014CED40 | 55                       | push    ebp                                                      |
-- 014CED41 | 8BEC                     | mov     ebp, esp                                                 |
-+ 014CED40 | B0 01                    | mov     al, 0x1                                                  |
-+ 014CED42 | C3                       | ret                                                              |
-014CED43 | 807D 0C 00               | cmp     byte ptr ss:[ebp + 0xC], 0x0                             |
+-014CED40 | 55                       | push    ebp                                                      |
+-014CED41 | 8BEC                     | mov     ebp, esp                                                 |
++014CED40 | B0 01                    | mov     al, 0x1                                                  |
++014CED42 | C3                       | ret                                                              |
+ 014CED43 | 807D 0C 00               | cmp     byte ptr ss:[ebp + 0xC], 0x0                             |
 ```
 
 ### Part 3
@@ -112,16 +112,16 @@ cmovne  eax, ecx
 3. Replace the `je` statement with `nop`.
 
 ```patch
-00C58E41 | 84C0                     | test    al, al                                                   |
-- 00C58E43 | 0F84 F7050000            | je      robloxplayerbeta.C59440                                  |
-+ 00C58E43 | 90                       | nop                                                              |
-+ 00C58E44 | 90                       | nop                                                              |
-+ 00C58E45 | 90                       | nop                                                              |
-+ 00C58E46 | 90                       | nop                                                              |
-+ 00C58E47 | 90                       | nop                                                              |
-+ 00C58E48 | 90                       | nop                                                              |
-00C58E49 | 8B7D 0C                  | mov     edi, dword ptr ss:[ebp + 0xC]                            |
-00C58E4C | 8D4D C4                  | lea     ecx, dword ptr ss:[ebp - 0x3C]                           |
+ 00C58E41 | 84C0                     | test    al, al                                                   |
+-00C58E43 | 0F84 F7050000            | je      robloxplayerbeta.C59440                                  |
++00C58E43 | 90                       | nop                                                              |
++00C58E44 | 90                       | nop                                                              |
++00C58E45 | 90                       | nop                                                              |
++00C58E46 | 90                       | nop                                                              |
++00C58E47 | 90                       | nop                                                              |
++00C58E48 | 90                       | nop                                                              |
+ 00C58E49 | 8B7D 0C                  | mov     edi, dword ptr ss:[ebp + 0xC]                            |
+ 00C58E4C | 8D4D C4                  | lea     ecx, dword ptr ss:[ebp - 0x3C]                           |
 ```
 
 ## How We Got Here
@@ -189,7 +189,7 @@ game.HttpService:GetAsync('https://localhost:2005')
 ```
 
 Easier to trace since `HttpService::GetAsync` has already existed in the 2016 source-code bundle:
-https://github.com/Jxys3rrV/roblox-2016-source-code/blob/main/App/v8datamodel/HttpService.cpp#L139
+https://github.com/Artifaqt/ROBLOX2016/blob/main/App/v8datamodel/HttpService.cpp#L139
 
 Since RFD is already a functional system, I simply set `server_core.startup_script` (a `GameConfig` option) as the following script:
 
@@ -336,9 +336,9 @@ At that address, I added.
 
 Both were added after the function finishes initialising and setting `ebp`.
 
-![alt text](image-1.png)
+![](image-1.png)
 
-![alt text](image-2.png)
+![](image-2.png)
 
 The URL string which is passed in can be reached through `utf8(ptr(ptr(ebp+a4)+68))` - keeping in mind that the `a4` and `68` are in hexadecimal.
 
@@ -445,17 +445,31 @@ For example, in [the 2016 source code](https://github.com/Artifaqt/ROBLOX2016/bl
 logCurlError("CURLOPT_FOLLOWLOCATION", curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1));
 ```
 
-Which corresponds, in the compiled `RobloxPlayerBeta.exe` v463, to:
+Which corresponds, in the compiled `RCCService.exe` v463, to:
 
-```x86asm
-push 0
-push 34
-push dword ptr ds:[edi+148]
-call robloxplayerbeta.1540770 // 1540770:curl_easy_setopt
-add esp,C
-push eax
-push robloxplayerbeta.21AA128 // 21AA128:"CURLOPT_FOLLOWLOCATION"
 ```
+01506379 | 6A 00                    | push 0                                                                                          |
+0150637B | 6A 34                    | push 34                                                                                         |
+0150637D | FFB7 48010000            | push dword ptr ds:[edi+148]                                                                     |
+01506383 | E8 38610200              | call rccservice.152C4C0                                                                         |
+01506388 | 8BF0                     | mov esi,eax                                                                                     | esi:EntryPoint
+0150638A | 83C4 0C                  | add esp,C                                                                                       |
+0150638D | 85F6                     | test esi,esi                                                                                    | esi:EntryPoint
+0150638F | 0F85 75060000            | jne rccservice.1506A0A                                                                          |
+01506395 | A0 9C6CFB01              | mov al,byte ptr ds:[<DFLog::HttpTrace>]                                                         |
+0150639A | 84C0                     | test al,al                                                                                      |
+0150639C | 74 17                    | je rccservice.15063B5                                                                           |
+0150639E | 68 3441AC01              | push rccservice.1AC4134                                                                         | 1AC4134:"CURLOPT_FOLLOWLOCATION"
+015063A3 | 57                       | push edi                                                                                        | edi:EntryPoint
+015063A4 | 0FB6C0                   | movzx eax,al                                                                                    |
+015063A7 | 68 6042AC01              | push rccservice.1AC4260                                                                         | 1AC4260:"[DFLog::HttpTrace] HttpRequestCurl(%p) curl op:%s"
+015063AC | 50                       | push eax                                                                                        |
+015063AD | E8 7E941900              | call rccservice.169F830                                                                         |
+015063B2 | 83C4 10                  | add esp,10                                                                                      |
+015063B5 | FFB7 48010000            | push dword ptr ds:[edi+148]                                                                     |
+```
+
+In 2021E RCC, I noted that `curl_easy_setopt` is found at address `0152C4C0`.
 
 Note the `push 34`, whose `CURLOPT` enum integer corresponds to `0x34`, according to [other programs which define the enums](https://github.com/ServersHub/Ark-Server-Plugins/blob/eabcf9276787889b2c0ef74b64bcd691a7821799/GamingOGs%20Plugins/gogcommandlogger-master/include/API/ARK/Enums.h#L10486):
 
@@ -463,13 +477,11 @@ Note the `push 34`, whose `CURLOPT` enum integer corresponds to `0x34`, accordin
 CURLOPT_FOLLOWLOCATION = 0x34,
 ```
 
-I added a logpoint to the head of what I think is `curl_easy_setopt`:
+I added a logpoint to the head (i.e., the very first instruction) of that `curl_easy_setopt` function:
 
 ```
 curl_set_opt {arg(1)} {arg(2)} [{utf8(arg(2))}]
 ```
-
-In 2021E RCC, I inserted it at address `0152C4C0`.
 
 ---
 
@@ -627,11 +639,11 @@ And where `014CED40` is the address which `eip` goes to.
 We apply the following patch, making the function simply return `1` in all cases.
 
 ```patch
-- 014CED40 | 55                       | push    ebp                                                      |
-- 014CED41 | 8BEC                     | mov     ebp, esp                                                 |
-+ 014CED40 | B0 01                    | mov     al, 0x1                                                  |
-+ 014CED42 | C3                       | ret                                                              |
-014CED43 | 807D 0C 00               | cmp     byte ptr ss:[ebp + 0xC], 0x0                             |
+-014CED40 | 55                       | push    ebp                                                      |
+-014CED41 | 8BEC                     | mov     ebp, esp                                                 |
++014CED40 | B0 01                    | mov     al, 0x1                                                  |
++014CED42 | C3                       | ret                                                              |
+ 014CED43 | 807D 0C 00               | cmp     byte ptr ss:[ebp + 0xC], 0x0                             |
 ```
 
 #### Patching `RequestInternal` Trust-Check
@@ -673,14 +685,14 @@ Whenever you call `HttpService::RequestInternal` using an 'untrusted' host, we t
 3. Replace the `je` statement with `nop`.
 
 ```patch
-00C58E41 | 84C0                     | test    al, al                                                   |
-- 00C58E43 | 0F84 F7050000            | je      robloxplayerbeta.C59440                                  |
-+ 00C58E43 | 90                       | nop                                                              |
-+ 00C58E44 | 90                       | nop                                                              |
-+ 00C58E45 | 90                       | nop                                                              |
-+ 00C58E46 | 90                       | nop                                                              |
-+ 00C58E47 | 90                       | nop                                                              |
-+ 00C58E48 | 90                       | nop                                                              |
-00C58E49 | 8B7D 0C                  | mov     edi, dword ptr ss:[ebp + 0xC]                            |
-00C58E4C | 8D4D C4                  | lea     ecx, dword ptr ss:[ebp - 0x3C]                           |
+ 00C58E41 | 84C0                     | test    al, al                                                   |
+-00C58E43 | 0F84 F7050000            | je      robloxplayerbeta.C59440                                  |
++00C58E43 | 90                       | nop                                                              |
++00C58E44 | 90                       | nop                                                              |
++00C58E45 | 90                       | nop                                                              |
++00C58E46 | 90                       | nop                                                              |
++00C58E47 | 90                       | nop                                                              |
++00C58E48 | 90                       | nop                                                              |
+ 00C58E49 | 8B7D 0C                  | mov     edi, dword ptr ss:[ebp + 0xC]                            |
+ 00C58E4C | 8D4D C4                  | lea     ecx, dword ptr ss:[ebp - 0x3C]                           |
 ```

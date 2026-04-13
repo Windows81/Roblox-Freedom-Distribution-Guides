@@ -4,8 +4,8 @@ This guide is only currently applicable for v463.
 
 Prepared patches are availble, assuming that [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
 
-- [[RCC]](v463-server.1337)
-- [[Player]](v463-player.1337)
+- [`./v463-server.1337` (RCC)](./v463-server.1337)
+- [`./v463-player.1337` (Player)](./v463-player.1337)
 
 I wanted to use an FFlag initialised but not _really_ being used anywhere. For v463, I chose `FFlag::Q220PermissionsSettings` after my own personal research.
 
@@ -14,13 +14,11 @@ However, we'll be causing undefined behaviour with `FFlag::ParallelLua` by overw
 These steps should be followed for both RCC and the client to achieve your desired result.
 
 1. Before anything else, make sure [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
-
    - Otherwise, the FFlag addresses will change after each program-run and x32dbg won't be able to account for that.
 
 2. Open x32dbg and attach your executable.
 
 3. Search for the ROT13 string: `Gur pheerag vqragvgl (%q) pnaabg %f (ynpxvat crezvffvba %q`.
-
    - This cypherstring correponds to `The current identity (%d) cannot %s (lacking permission %d)`.
 
 4. Add a breakpoint at function entry (`push ebp`).

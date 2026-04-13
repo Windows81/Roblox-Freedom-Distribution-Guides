@@ -74,11 +74,11 @@ But rather, I am interested in
 
 Two entries for `CURLOPT_SSL_VERIFYPEER`.
 
-![alt text](image-3.png)
+![](image-3.png)
 
 Both are nearby.
 
-![alt text](image-9.png)
+![](image-9.png)
 
 ```c
 CURLOPT_SSL_VERIFYPEER = 0x40,
@@ -116,7 +116,7 @@ We're not done yet! Because we need to ensure that `CURLOPT_SSL_VERIFYHOST` is a
 CURLOPT_SSL_VERIFYHOST = 0x51,
 ```
 
-![alt text](image-11.png)
+![](image-11.png)
 
 ```patch
 push 1
@@ -142,17 +142,17 @@ Let's open 2021E (v463) RCCService.exe in `x32dbg`.
 
 But we only need to concern ourselves with one pair of results, as the other is completely irrelevant and has a completely different execution flow to what we did for `RobloxPlayerBeta`.
 
-![alt text](image-12.png)
+![](image-12.png)
 
-![alt text](image-13.png)
+![](image-13.png)
 
 We have no results for `CURLOPT_SSL_VERIFYHOST`,
 
-![alt text](image-14.png)
+![](image-14.png)
 
 But there is no need to fix that.
 
-![alt text](image-15.png)
+![](image-15.png)
 
 RCC already uses your system's certs anyway.
 

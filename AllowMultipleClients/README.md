@@ -1,8 +1,12 @@
-### How does Rōblox know to prevent multiple clients for running simultaneously?
+# Allowing Multiple Clients
 
-![alt text](image-4.png)
+**How does Rōblox know to prevent multiple clients for running simultaneously?**
 
-The [2016 source code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/WindowsClient/Application.cpp#L1187) tells us:
+![](image-4.png)
+
+---
+
+The [2016 source code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/WindowsClient/Application.cpp#L1187) tells us the following:
 
 ```cpp
 void Application::waitForNewPlayerProcess(HWND hWnd)
@@ -88,24 +92,33 @@ Look out for `ROBLOX_singletonMutex` and `Cannot create event to secure single p
 
 Let's put a breakpoint there:
 
-![alt text](image.png)
+![](image.png)
 
 Call stack:
 
-![alt text](image-1.png)
+![](image-1.png)
 
 One level up the stack:
 
-![alt text](image-2.png)
+![](image-2.png)
 
 Under normal execution (i.e., when there is no other Rōblox instance running), `waitForNewPlayerProcess` doesn't invoke any callbacks on its own.
 
 Let's replace the first `push` statement with `ret`.
 
-![alt text](image-3.png)
+![](image-3.png)
+
+---
+
+In all, the final patch for v463 player would be:
 
 ```patch
-
+ 005EF29F | CC                       | int3
+-005EF2A0 | FF71 40                  | push dword ptr ds:[ecx+40]
++005EF2A0 | C3                       | ret
++005EF2A1 | 90                       | nop
++005EF2A2 | 90                       | nop
+ 005EF2A3 | 8B49 3C                  | mov ecx,dword ptr ds:[ecx+3C]
+ 005EF2A6 | E8 052C0000              | call robloxplayerbeta.5F1EB0
+ 005EF2AB | C3                       | ret
 ```
-
-Unfortunately, v463 contains one other instance of `CC FF 71 40 8B 49 3C`, two other instances of `FF 71 40 8B 49`, and countless other instances of

@@ -8,7 +8,7 @@ Dum Rōblox decided that they won't load `./Content/models/DataModelPatch/DataMo
 
 Refer to [`DataModelPatchPatch.1337`](./DataModelPatchPatch.1337). Import it into **x32**dbg or something!
 
-[alt text](image-2.png)
+[](image-2.png)
 
 With those patches, I took out the SIGN chunk at the end -- and everything loaded fine. It took me 2 or 3 days to do.
 
@@ -44,7 +44,7 @@ open(write_file_name, 'wb').write(write_data)
 
 Open the newly decompressed file in a hex-editing tool. Write down the address of the byte highlighted below. The `0x01` right after `Name` corresponds to the `String` [property type](https://github.com/RobloxAPI/spec/blob/master/formats/rbxl.md#value-types). So we want to collect the byte right after this metadatum.
 
-![alt text](image.png)
+![](image.png)
 
 In this case, we're using `0x00094888` as the base address. The reason that these bytes follow as `0A 00 00 00` is because the `Connection` string afterwards is ten characters long.
 
@@ -76,7 +76,7 @@ Now to get the values of the "Source" property.
 
 Repeat for "Source". The 0x1D is _supposed_ to refer to the value type for [bytecode](https://github.com/strawbberrys/0x1D/tree/master/bytecode-poc).
 
-![alt text](image-1.png)
+![](image-1.png)
 
 ```py
 b = 0x000B5407

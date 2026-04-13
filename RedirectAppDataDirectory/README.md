@@ -78,7 +78,7 @@ Let's open up x32dbg using the 2018E (v348) `RCCService.exe`.
 
 Then search for user strings.
 
-![alt text](image.png)
+![](image.png)
 
 If you get multiple results, clicking on just one will suffice.
 
@@ -121,7 +121,7 @@ switch (dir)
 
 This region has some of the same call to `SHGetFolderPathAndSubDirW`, which x32dbg conveniently denotes for us below:
 
-![alt text](image-1.png)
+![](image-1.png)
 
 Notice that the address pointing to `SHGetFolderPathAndSubDirW` is stored in register `ebx` at instruction `00577A5C`.
 
@@ -133,7 +133,7 @@ From earlier, we determined that `dir` should be equal to zero. So we want to tr
 
 Therefore, no other enum values for `dir` can reach this code segment. It should be safe to `nop` the entire region.
 
-![alt text](image-2.png)
+![](image-2.png)
 
 The unconditional `jmp` immediately after the highlighted region is a bridge for the _next_ available region of code to discuss. Fortunately, these two code regions are near each other.
 
@@ -149,7 +149,7 @@ if ((hr!=S_OK) && (dir == DirAppData))
 
 This code's execution flow depends on if the previous region yields failure via a C++ variable `hr`. Since `SHGetFolderPathAndSubDirW` is being used again, it is reasonable to assume that `call ebx`.
 
-![alt text](image-3.png)
+![](image-3.png)
 
 Combining the two segments together, we can trace this execution graph:
 
@@ -236,7 +236,7 @@ flowchart TB
     3 --> END["END"]
 ```
 
-![alt text](image-4.png)
+![](image-4.png)
 
 To allow more space for our own own instructions, I've had to move some of the jumps in addition to making them unconditional. For example,
 
@@ -337,17 +337,17 @@ Here are the changes I did:
 
 To make sure of the `0x8` offset - that you have the right address for `QCoreApplication::applicationDirPath(void)`, consult the _Symbols_ tab and search in the `robloxstudiobeta.exe` module for imports of `applicationDirPath`.
 
-![alt text](image-5.png)
+![](image-5.png)
 
 ```patch
-00725EC0 | 8D45 D8               | lea eax,dword ptr ss:[ebp-28]
-00725EC3 | 50                    | push eax
+ 00725EC0 | 8D45 D8               | lea eax,dword ptr ss:[ebp-28]
+ 00725EC3 | 50                    | push eax
 -00725EC4 | FF15 EC3B4301         | call dword ptr ds:[<public: static class QString __cdecl QDir::homePath(void)>]
 +00725EC4 | FF15 E43B4301         | call dword ptr ds:[<public: static class QString __cdecl QCoreApplication::applicationDirPath
 ```
 
 ```patch
-017F78DC  65 64 00 00 43 72 61 73 68 4D 65 6E 75 00 00 00  ed..CrashMenu...
+ 017F78DC  65 64 00 00 43 72 61 73 68 4D 65 6E 75 00 00 00  ed..CrashMenu...
 -017F78EC  2F 41 70 70 44 61 74 61 2F 4C 6F 63 61 6C 2F 52  /AppData/Local/R
 -017F78FC  6F 62 6C 6F 78 00 00 00 77 77 77 2E 00 00 00 00  oblox...www.....
 +017F78EC  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................

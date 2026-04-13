@@ -13,7 +13,7 @@ I've provided some client-sided minidumps to find out.
 
 Using [MinidumpExplorer](https://github.com/GregTheDev/MinidumpExplorer/releases/tag/v0.8) on [`./log_B340B_0,_463,_0, 417004.Client.dmp`](./log_B340B_0,_463,_0,_417004.Client.dmp):
 
-![alt text](image.png)
+![](image.png)
 
 They basically point to a `0xC0000094` (integer-division-by-zero) error at address `06509D7`.
 
@@ -72,7 +72,7 @@ We should set that to `0` so that this specific divide-by-zero error never happe
 
 Using [MinidumpExplorer](https://github.com/GregTheDev/MinidumpExplorer/releases/tag/v0.8) on [`./log_5C388_0,_463,_0, 417004.Client.dmp`](./log_5C388_0,_463,_0,_417004.Client.dmp):
 
-![alt text](image-1.png)
+![](image-1.png)
 
 They basically point to a `0xC0000005` (access-violation) error at address `00EB6C88`.
 

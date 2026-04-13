@@ -13,19 +13,19 @@ Disclaimer: you can use better and more efficient methods than mine.
 
 2. In selecting _PE Editor_ (Alt + 1), open `RobloxPlayerBeta.exe` as a file.
 
-![alt text](image-0.png)
+![](image-0.png)
 
 ---
 
 3. Navigate to _Sections_, right-click anywhere on the _Sections Information_ box, then to _Add section_.
 
-![alt text](image-1.png)
+![](image-1.png)
 
 ---
 
 4. Add an empty section (with _Fill with 0x00_ selected). The name can be set to whatever you want. Maybe `.new`. Maybe `.rdata2`.
 
-![alt text](image-2.png)
+![](image-2.png)
 
 ---
 
@@ -41,4 +41,4 @@ Your `RobloxPlayerBeta.exe` should've grown somewhat.
 
 This is what it'd look like for me:
 
-![alt text](image.png)
+![](image.png)

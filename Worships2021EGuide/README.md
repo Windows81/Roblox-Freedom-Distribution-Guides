@@ -34,12 +34,10 @@ I also do recommend using the webserver from this repository, it already contain
 ```
 
 2. Open x32dbg, then drag the client into the window.
-
    - Up top, click on `Smybols` then in the window look for `RobloxPlayerBeta.exe` and double click it.
    - Up top, there should be a solid right arrow. Click on it twice, this is to get around VMProtect.
 
 3. Right click anywhere on the code and click `Search for` > `All Modules` > `String references...`
-
    - Wait for the module search to complete, in the search bar near the bottom, type `trust check` and wait.
    - Double click it, or right click on the first result and click `Follow in Disassembler`.
    - Scroll up a little bit and you should see a `jne` or `je` instruction, right click and select assemble it or press space, then change it to `jmp`.
@@ -53,7 +51,6 @@ I also do recommend using the webserver from this repository, it already contain
   ![example](image-2.png)
 
 5. Click on `File` > `Patch File...` and save it as `Patched.exe`.
-
    - Close x32dbg, then delete, rename, or move the old `RobloxPlayerBeta.exe`. After that, rename `Patched.exe` to `RobloxPlayerBeta.exe`.
 
 6. Inside of the client folder create a new folder called `ClientSettings` and inside of that create a new file called `ClientAppSettings.json` and download [this file](https://www.mediafire.com/file/ktli6i6dkcxf1u4/ClientAppSettings.json/file) and move it into the folder.
@@ -63,31 +60,28 @@ I also do recommend using the webserver from this repository, it already contain
    ```bat
    start RobloxPlayerBeta.exe -a "http://localhost/Login/Negotiate.ashx" -j "http://localhost/game/placelauncher.ashx" -t "1"
    ```
+
    - When you are done, it should look like the following:
-     ![alt text](image-3.png)
+     ![](image-3.png)
 
 Done! You have successfully patched the client.
 
 ## Patching RCCService
 
 1. Run `0.463.24788Bootstrapper.exe` as an administrator and let it install.
-
    - After it is done, open the `Roblox` folder in the `Program Files (x86)` directory. In there should be a folder called `RCC-` followed by a bunch of random letters and numbers.
    - Open that folder and copy the contents and move them into the `RCCService` folder inside of your main 2021E folder.
 
 2. Open `RCCService.exe` in HxD by dragging it into the window.
-
    - Press `Ctrl + F` and search for `00 68 74 74 70 73 00`.
    - Replace it with `00 68 74 74 70 00 00`.
    - Save the file and close HxD.
 
 3. Perform the same trust check patching as you did with the client, but with `RCCService.exe` instead in x32dbg.
-
    - After that, you need to patch `Non-trusted BaseURL used. HttpRbxApiService is only for Roblox API calls`, search that string and patch the `jne` or `je` instruction to `jmp` like you did with the client.
    - Patch the file like you did with the client, then delete, rename, or move the old `RCCService.exe` and rename `Patched.exe` to `RCCService.exe`.
 
 4. Go back to the `Contents` directory and copy all of the files (NOT MOVE) into the `RCCService` folder.
-
    - After that create a batch file in the `RCCService` directory with the following code:
 
    ```bat
@@ -123,7 +117,6 @@ _you must run these in order!_
 
 - If you would like to configure the username, avatar, etc. Its all in the webserver folder in the `www` directory.
 - If you would like to test other games, inside of the `www` directory open the `.127.0.0.1` folder, and inside of assets upload a `.rbxl` or `.rbxlx` file (make sure to remove the .rbxl/.rbxlx extension from the file name) and rename it to an id.
-
   - In order to actually play it modify gameserver.json in RCCService, change the id inside of the `PlaceFetchUrl` to the id of the place asset.
   - NOTE: I believe roblox did a change to their binary and xml formats on some channels (not live or any main ones, I am on an experimental channel), as of 3/14/24 to 3/16/24 the new binary format would not work with 2021E. This has since been fixed and you can use new place files. Please watch out for any of these changes in the future and make archives of your games that you want to play on it in the older format.
 
