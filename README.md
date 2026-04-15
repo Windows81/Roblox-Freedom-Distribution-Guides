@@ -30,9 +30,9 @@ The best items contain "quick guides", along with a primer on how we reached our
 | [Make Asset URLs Permissive](./MakeAssetURLsPermissive)                                 | 0.3          |
 | [Allow Multiple Simultaneous Clients](./AllowMultipleClients)                           | 0.5          |
 | [Fix Occasional Crashes](./FixOccasionalCrashes)                                        | 1.0          |
-| [Ongoing CSG Research](./OngoingCSGResearch)                                            | 0.3          |
+| [Constructive Solid Geometry (CSG) Research](./CSGv3Research)                           | 0.3          |
 | [Patch Materials](./PatchMaterials)                                                     | 1.0          |
-| [Patch TLS Verification](./PatchTLSVerification)                                        | 0.9          |
+| [Patch Transport-Layer Security (TLS) Verification](./PatchTLSVerification)             | 0.9          |
 | [Enable Port Agnosticness](./EnablePortAgnosticness)                                    | 0.7          |
 | [Redirect App Data Directory](./RedirectAppDataDirectory)                               | 0.8          |
 | [Enable Save Place](./EnableSavePlace)                                                  | 0.8          |

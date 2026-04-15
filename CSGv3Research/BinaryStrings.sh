@@ -1,8 +1,11 @@
 #!/bin/sh
 
-FILE_NAME="CSGv3.rbxmx"
-dir_name="BinaryStrings_"$FILE_NAME
-mkdir $dir_name
+# Usage:
+# dump_strings "CSGv3.rbxmx"
+# dump_strings "CSGv2.rbxmx"
+
+dir_name="BinaryStrings_$(basename "$1")"
+mkdir "$dir_name"
 
 awk -v d="$dir_name" '
 BEGIN {
@@ -37,12 +40,12 @@ BEGIN {
         # Gets the substring excluding XML tags.
         match(output, /<SharedString[^>]*>([^<]*)<\/SharedString>/, a);
 
-        # Decode the base64 string
+        # Decodes the base64 string.
         cmd = "echo -n \"" a[1] "\" | base64 --decode"
     cmd | getline decoded_line
     close(cmd)
 
-    # Write to a file with leading zeros
+    # Writes to a file with leading zeros.
     filename = sprintf("%s/%03d.bin", d, NR)
 	print filename
     print decoded_line > filename
@@ -51,4 +54,4 @@ BEGIN {
         output = "";
 }
 }
-' $FILE_NAME
+' "$1"
