@@ -158,11 +158,6 @@ https://github.com/MaximumADHD/RCT-Source/blob/dc5b8cba752ebf0b7ce02fc59b6457844
 public static bool PullInstanceData(Instance inst, ref string value, ref string extension)
 ```
 
-...
-The `Source` values are very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very likely to be bytecode.
-
-**To be continued...**
-
 ---
 
 In a script named `NotifyReady.lua` (there are like three copies in DataModelPatch),
@@ -217,12 +212,15 @@ return makeActionCreator(script.Name, "premiumInfo")
 0D BE 18 97 BF 91 FE 4A 8F 80 8D 13 6B 65 2B 96 EF EF 23 28 B0 51 4F 57 37 39 0D B2 D0 E9 F4 5B 19 DE 32 E2 65 3B 2B F8 17 9F 36 23 6C F9 76 35 78 EB 39 44 91 1F 54 E4 A8 4E E8 3E 34 DF 2F F7 24 66 B7 15 45 8F 19 25 AD 5A F9 51 9D E9 5C 82 45 54 7D 6A 99 FA B1 07 21 30 FE 5F C4 34 8E 1D C2 B7 BB 0E 99 BA BD 49 56 55 EA 0F 8C 18 27 71 22 6C 2E 0A 3E 48 2A 29 48 51 82 D0 E9 29 56 BC 91 5B DC BD 53 82 F0 4E 1E 4C 80 E6 58 52 15 17 6F D6 33 76 C6 96 14 A0 A3 07 DA 79 FA 4B
 ```
 
-I think that the code is encrypted.
-
-If it wasn't, any strings would be plainly visible in the bytecode.
+The bytecode is encrypted/compressed, this is apparent due to no strings being visible in the bytecode.
 
 ---
 
 According to Orblua,
 
 > Roblox Studio and the Roblox client Luau bytecode have different opcodes
+
+---
+
+### Decompressing the Bytecode
+
