@@ -232,7 +232,7 @@ The serializer used in 2016E can be seen [here](https://github.com/Artifaqt/ROBL
 
 ---
 
-Using [decompress.py](PatchDataModelPatch/decompress.py) on `PremiumInfoRecieved` we get the following: 
+Using [decompress.py](decompress.py) on `PremiumInfoRecieved` we get the following: 
 ```
 01 06 07 72 65 71 75 69 72 65 06 73 63 72 69 70 74 06 50 61 72 65 6E 74 11 6D 61 6B 65 41 63 74 69 6F 6E 43 72 65 61 74 6F 72 04 4E 61 6D 65 0B 70 72 65 6D 69 75 6D 49 6E 66 6F 01 04 00 00 01 12 A3 00 00 00 A4 00 01 00 00 00 00 40 A4 03 03 00 00 00 20 40 4D 02 03 24 04 00 00 00 4D 01 02 5B 05 00 00 00 9F 00 02 02 52 01 00 00 A4 03 03 00 00 00 20 40 4D 02 03 BA 06 00 00 00 6F 03 07 00 9F 01 03 00 82 01 00 00 08 03 01 04 00 00 00 40 03 02 04 00 00 20 40 03 03 03 04 03 05 03 06 00 00 01 18 00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 01 00 00 00 00 00
 ```
