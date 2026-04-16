@@ -6,7 +6,7 @@ I then did took the patches from [this guide](../Worships2021EGuide/README.md) a
 
 Dum Rōblox decided that they won't load `./Content/models/DataModelPatch/DataModelPatch.rbxm` if it's been modified. Not to worry; I patched the signing requirement out.
 
-Refer to [`DataModelPatchPatch.1337`](./DataModelPatchPatch.1337). Import it into **x32**dbg or something!
+Refer to [`./DataModelPatchPatch.1337`](./DataModelPatchPatch.1337). Import it into **x32**dbg or something!
 
 [](image-2.png)
 
@@ -22,7 +22,7 @@ This is a super rough draft. Things do not make full sense now and _will_ be ref
 
 ### Preparation
 
-1. Download [`DataModelPatch.rbxm`](DataModelPatch.rbxm). For Rōblox v463, `DataModelPatch.rbxm` can be pulled from:
+1. Download [`./DataModelPatch.rbxm`](DataModelPatch.rbxm). For Rōblox v463, `DataModelPatch.rbxm` can be pulled from:
 
 ```sh
 curl -L "https://assetdelivery.roblox.com/v1/asset/?id=5345954812&version=897"
@@ -98,7 +98,7 @@ while True:
 
 The bytecode dumps are saved in a list named `sources`.
 
-### [`DataModelPatchBytecodes.zip`](DataModelPatchBytecodes.zip)
+### [`./DataModelPatchBytecodes.zip`](DataModelPatchBytecodes.zip)
 
 In the previous two sections, we collected `names` and `sources`. Time to save them to a file.
 
@@ -212,11 +212,11 @@ return makeActionCreator(script.Name, "premiumInfo")
 0D BE 18 97 BF 91 FE 4A 8F 80 8D 13 6B 65 2B 96 EF EF 23 28 B0 51 4F 57 37 39 0D B2 D0 E9 F4 5B 19 DE 32 E2 65 3B 2B F8 17 9F 36 23 6C F9 76 35 78 EB 39 44 91 1F 54 E4 A8 4E E8 3E 34 DF 2F F7 24 66 B7 15 45 8F 19 25 AD 5A F9 51 9D E9 5C 82 45 54 7D 6A 99 FA B1 07 21 30 FE 5F C4 34 8E 1D C2 B7 BB 0E 99 BA BD 49 56 55 EA 0F 8C 18 27 71 22 6C 2E 0A 3E 48 2A 29 48 51 82 D0 E9 29 56 BC 91 5B DC BD 53 82 F0 4E 1E 4C 80 E6 58 52 15 17 6F D6 33 76 C6 96 14 A0 A3 07 DA 79 FA 4B
 ```
 
-The bytecode is encrypted/compressed, this is apparent due to no strings being visible in the bytecode.
+The bytecode is *both* encrypted and compressed. This is apparent due to a lack of visible strings in that bytecode.
 
 ---
 
-According to Orblua,
+According to Orblua:
 
 > Roblox Studio and the Roblox client Luau bytecode have different opcodes
 
@@ -224,20 +224,22 @@ According to Orblua,
 
 ### Decompressing the Bytecode
 
-It seems the bytecode *DataModelPatch* contains is serialized and compressed using an similar algorithm to one used by Rōblox as far back as 2016.
+It seems the bytecode *DataModelPatch* contains is serialised and compressed using a similar algorithm to one used by Rōblox [as per the 2016 source-code repository](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/script/LuaSerializer.inl#L44).
 
-The difference being that 2021E uses ZSTD instead of LZ4 for compression, Luau rather than Lua and the bytecode proto's likely being encoded differently.
-
-The serializer used in 2016E can be seen [here](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/script/LuaSerializer.inl#L44).
+However, there are some important differences:
+1. 2021E uses ZSTD instead of LZ4 for compression, and
+2. the bytecode is in Luau rather than in Lua 5.1, and thusa are bytecode protos likely being encoded differently.
 
 ---
 
-Using [decompress.py](decompress.py) on `PremiumInfoRecieved` we get the following: 
+Using [`./decompress.py`](decompress.py) on `PremiumInfoRecieved` we get the following: 
 ```
 01 06 07 72 65 71 75 69 72 65 06 73 63 72 69 70 74 06 50 61 72 65 6E 74 11 6D 61 6B 65 41 63 74 69 6F 6E 43 72 65 61 74 6F 72 04 4E 61 6D 65 0B 70 72 65 6D 69 75 6D 49 6E 66 6F 01 04 00 00 01 12 A3 00 00 00 A4 00 01 00 00 00 00 40 A4 03 03 00 00 00 20 40 4D 02 03 24 04 00 00 00 4D 01 02 5B 05 00 00 00 9F 00 02 02 52 01 00 00 A4 03 03 00 00 00 20 40 4D 02 03 BA 06 00 00 00 6F 03 07 00 9F 01 03 00 82 01 00 00 08 03 01 04 00 00 00 40 03 02 04 00 00 20 40 03 03 03 04 03 05 03 06 00 00 01 18 00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 01 00 00 00 00 00
 ```
 
-Well there we go, we can see a Luau V1 bytecode header. `01` for the version and `06` being the numbers of strings.
+Well - there we go.
+
+We can see a Luau V1 bytecode header: `01` for the version byte and `06` being the count of strings.
 
 If you view it as asicii, strings are clearly visible.
 
@@ -247,5 +249,5 @@ If you view it as asicii, strings are clearly visible.
 
 It's possible and likely that the bytecode's opcodes are encoded/obfuscated considering that it's the case for bytecode observed from 2016E and current day Roblox. However I haven't completely looked into this yet.
 
-### Serializing our own bytecode
+### Modifying DataModelPatch
 Coming soon...
