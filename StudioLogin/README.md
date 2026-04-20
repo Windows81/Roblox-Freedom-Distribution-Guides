@@ -14,21 +14,27 @@ You may be tempted to try bypassing this through several methods:
 
 1. **Ctrl + O:** a similar message shows up: `"You must log in to open files."`
 
-2. **Dragging to Topbar:** in 2021, the login screen could be bypassed by dragging the desired file from File Explorer to the top of the Studio window. This option does not work in current-day (late 2025) versions of Studio.
+2. **Dragging to Topbar:** in 2021, the login screen could be bypassed by dragging the desired file from File Explorer to the top of the Studio window. This option does not work in late-2025 versions of Studio.
 
-3. **Ctrl + N:** Rōblox has this action accounted for. An error string `"You must log in to create new files."` shows up. Let's investigate this option further with x64dbg.
+3. **Ctrl + N:** Rōblox has had this action accounted for since at latest 2018. An error string `"You must log in to create new files."` shows up. Let's investigate this option further with x64dbg.
 
----
+### Finding Strings to Locate
 
 ![](image-1.png)
 
-In the `RobloxStudioBeta.exe` v463 executable, there are no results for the string `"You must log in to create new files."`
+In the `RobloxStudioBeta.exe` v463 executable, there are no results (via x64dbg) for the string `"You must log in to create new files."`
 
-However, you will find that string in the Rōblox Client Tracker data at [`./QtResources/Translation/StudioStringsUntranslated.csv`](https://github.com/MaximumADHD/Roblox-Client-Tracker/blob/f867742be117235b24b2be7500eada1d20ba42f3/QtResources/Translation/StudioStringsUntranslated.csv#L789). The translation-agnostic key is **`"Studio.App.MainWindow.LogInToCreateNewFiles"`**. The CSV data was compressed as a Qt resource. The Client Tracker used the [qtextract](https://github.com/axstin/qtextract.git) tool to extract the CSV data.
+This is because Rōblox stores most user-facing strings in a localisation table.
+
+You will find that desired string in the Rōblox Client Tracker data at [`./QtResources/Translation/StudioStringsUntranslated.csv`](https://github.com/MaximumADHD/Roblox-Client-Tracker/blob/f867742be117235b24b2be7500eada1d20ba42f3/QtResources/Translation/StudioStringsUntranslated.csv#L789). The translation-agnostic key is **`"Studio.App.MainWindow.LogInToCreateNewFiles"`**.
+
+The CSV data was compressed as a Qt resource; the Client Tracker used the [qtextract](https://github.com/axstin/qtextract.git) tool to extract the CSV data.
 
 I search for string references in user modules in `RobloxStudioBeta.exe` v463 executable (using x64dbg) for `"Studio.App.MainWindow.LogInToCreateNewFiles"`. One result shows up at address `000000014026CD15`.
 
 I add a breakpoint right there at `000000014026CD15`. I make sure that Studio is at the starting login screen and hit Ctrl + N again. The breakpoint is hit.
+
+### Analysing Nearby Calls
 
 I step over the execution trace and notice that the message box shows up during a call to `robloxstudiobeta.140266D90`. This call is the first instruction after the breakpoint to use opcode `E8` and is located at `000000014026CD59`: some 12 instructions after the breakpoint.
 
@@ -78,12 +84,12 @@ The routine we're calling begins at `0000000140266D90` and ends at `000000014026
 0000000140266F6E | 48:8D8C24 A8000000       | lea     rcx, qword ptr ss:[rsp + 0xA8]  |
 0000000140266F76 | FF15 B4F3E501            | call    qword ptr ds:[<public: __cdecl  |
 0000000140266F7C | 32C0                     | xor     al, al                          |
-0000000140266F7E | 48:8B9C24 90000000       | mov     rbx, qword ptr ss:[rsp + 0x90]  | [rsp+90]:RtlUserThreadStart+28
+0000000140266F7E | 48:8B9C24 90000000       | mov     rbx, qword ptr ss:[rsp + 0x90]  |
 0000000140266F86 | 48:81C4 80000000         | add     rsp, 0x80                       |
 0000000140266F8D | 5F                       | pop     rdi                             |
 0000000140266F8E | C3                       | ret                                     |
 0000000140266F8F | B0 01                    | mov     al, 0x1                         | {A2}
-0000000140266F91 | 48:8B9C24 90000000       | mov     rbx, qword ptr ss:[rsp + 0x90]  | [rsp+90]:RtlUserThreadStart+28
+0000000140266F91 | 48:8B9C24 90000000       | mov     rbx, qword ptr ss:[rsp + 0x90]  |
 0000000140266F99 | 48:81C4 80000000         | add     rsp, 0x80                       |
 0000000140266FA0 | 5F                       | pop     rdi                             |
 0000000140266FA1 | C3                       | ret                                     |
@@ -98,6 +104,8 @@ Owing to the `jmp` statement per (1), we know that `al` comes from some other pl
 
 To determine the exact address of this call, we need to add another breakpoint. We do the same test as before to get this breakpoint captured. Once hit, _step into_ that function. In v463, that destination function begins at `00000001405F2100`.
 
+### Final Patch
+
 We apply the following patch to ensure that the function always returns a truish vaue.
 
 ```patch
@@ -106,4 +114,65 @@ We apply the following patch to ensure that the function always returns a truish
 +00000001405F2102 | 90                       | nop                                     |
 +00000001405F2103 | 90                       | nop                                     |
  00000001405F2104 | C3                       | ret                                     |
+```
+
+## Confirmation via the v548 PDBs
+
+Using IDA, and looking through the v548 PDB files (which some Rōblox reverse-engineers refer to for research), we can confirm our findings.
+
+To begin, the string `"Studio.App.MainWindow.LogInToCreateNewFiles"` appears exactly once, that being in `RobloxMainWindow::fileNew`.
+
+We can use IDA to decompile the referring code:
+
+```cpp
+void __fastcall RobloxMainWindow::fileNew(RobloxMainWindow *this)
+{
+  ...
+  QMetaObject::tr(
+    &RobloxMainWindow::staticMetaObject,
+    (const char *)&v16,
+    "Studio.App.MainWindow.LogInToCreateNewFiles",
+    0);
+  v2 = QString::toStdString(&v16, ptr);
+  if ( *(_QWORD *)(v2 + 24) >= 0x10u )
+    v2 = *(_QWORD *)v2;
+  v3 = !RobloxMainWindow::checkLoggedInAndDisplayError(this, (const char *)v2);
+  if ( v15 >= 0x10 )
+  {
+    v4 = ptr[0];
+    if ( v15 + 1 >= 0x1000 )
+    {
+      v4 = *((void **)ptr[0] - 1);
+      if ( (unsigned __int64)((char *)ptr[0] - (char *)v4 - 8) > 0x1F )
+        _invalid_parameter_noinfo_noreturn();
+    }
+    operator delete(v4);
+  }
+  ...
+```
+
+Importantly, this snippet refers to method `RobloxMainWindow::checkLoggedInAndDisplayError`:
+
+```cpp
+char __fastcall RobloxMainWindow::checkLoggedInAndDisplayError(RobloxMainWindow *this, const char *errorMessage)
+{
+  ILoginManager *loginManager; // rax
+  LoggedInUser *loggedInUser; // rax
+  QTypedArrayData<unsigned short> *errorMessageArray; // rbx
+  char v8; // [rsp+50h] [rbp+18h] BYREF
+  char v9; // [rsp+58h] [rbp+20h] BYREF
+
+  loginManager = SingletonInterfaceFetcher::getInterface<ILoginManager>();
+  loggedInUser = (LoggedInUser *)loginManager->DEPRECATED_getLoggedInUser(loginManager);
+  if ( loggedInUser->getIsLoggedIn(loggedInUser) )
+    return 1;
+  if ( FLog::Always )
+    FLog::FastLogS(FLog::Always, "[FLog::Always] %s", errorMessage);
+  errorMessageArray = QString::fromUtf8(&v9, (_DWORD)errorMessage).d;
+  QMetaObject::tr(&RobloxMainWindow::staticMetaObject, &v8, "Studio.App.MainWindow.RobloxStudio", 0);
+  QMessageBox::critical(this, &v8, errorMessageArray, 1024, 0);
+  QString::~QString(&v8);
+  QString::~QString(&v9);
+  return 0;
+}
 ```

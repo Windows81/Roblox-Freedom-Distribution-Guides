@@ -54,7 +54,7 @@ RBX::RobloxGoogleAnalytics::lotteryInit(googleAnalyticsAccountPropId,
 
 Note that `FInt::StudioRobloxAnalyticsLoad` is the (optional) fifth argument, which corresponds to `robloxAnalyticsLottery` in the initialisation function. Thus, _we can set `FIntStudioRobloxAnalyticsLoad` to 0_.
 
-However, this flag had its name changed sometime between v410 and v463. According to [test files from my own FFlag extractor](https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/tree/main/test), this was changed to `FIntStudioRobloxAnalyticsLoadHundredth`. The variable was _completely retired_ between v548 and v695. Probaly because [they're moving away from it](https://github.com/MaximumADHD/Roblox-FFlag-Tracker/blob/514d35ca3ba89fd92f7ee67eb6e364a538e7b49e/FVariables/FFlag/D/FFlagDeprecateGoogleAnalytics.json#L3).
+However, this flag had its name changed sometime between v410 and v463. According to [test files from my own FFlag extractor](https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/tree/main/test), this was changed to `FIntStudioRobloxAnalyticsLoadHundredth`. The variable was _completely retired_ sometime between v548 and v695. Probaly because [they were moving away from Google](https://github.com/MaximumADHD/Roblox-FFlag-Tracker/blob/514d35ca3ba89fd92f7ee67eb6e364a538e7b49e/FVariables/FFlag/D/FFlagDeprecateGoogleAnalytics.json#L3).
 
 ### Player
 
