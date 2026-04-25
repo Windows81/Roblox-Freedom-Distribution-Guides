@@ -228,7 +228,7 @@ It seems the bytecode *DataModelPatch* contains is serialised and compressed usi
 
 However, there are some important differences:
 1. 2021E uses ZSTD instead of LZ4 for compression, and
-2. the bytecode is in Luau rather than in Lua 5.1, and thusa are bytecode protos likely being encoded differently.
+2. the bytecode is in Luau rather than in Lua 5.1, and thus bytecode protos are being being encoded differently.
 
 ---
 
@@ -247,7 +247,23 @@ If you view it as asicii, strings are clearly visible.
 
 ---
 
-It's possible and likely that the bytecode's opcodes are encoded/obfuscated considering that it's the case for bytecode observed from 2016E and current day Roblox. However I haven't completely looked into this yet.
+[Opcodes](https://github.com/luau-lang/luau/blob/e997a4cc574d5d2eecda33f3237aa13481e2de16/Compiler/include/Luau/Bytecode.h#L32) in each proto are encoded using the following function, `encodeOp`.
+```cpp
+class bytecode_encoder : public Luau::BytecodeEncoder
+{
+	std::uint8_t encodeOp(const std::uint8_t opcode)
+	{
+		return opcode * 227;
+	}
+};
+```
+[`luau_compile`](https://github.com/luau-lang/luau/blob/e997a4cc574d5d2eecda33f3237aa13481e2de16/Compiler/src/Compiler.cpp#L3749) can take and use this encoder in the compilation process, which we will use to produce our own bytecode for DataModelPatch.
+
+Examples of encoded opcodes (denary).
+
+- `LOP_PREPVARARGS` 65 > 165
+- `LOP_GETIMPORT` 12 > 164
+- `LOP_CALL` 21 > 159
 
 ### Modifying DataModelPatch
 Coming soon...
