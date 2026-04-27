@@ -1,6 +1,6 @@
 function transformLib(name, funcs)
 	local result = {}
-	for k, v in next, funcs do
+	for k, v in pairs(funcs) do
 		result[k] = v
 	end
 
@@ -14,11 +14,14 @@ function transformLib(name, funcs)
 end
 
 function transformLibs(libTable, filter)
-	for k, v in next, libTable do
+	local merged = {}
+	for k, v in pairs(libTable) do
 		if not filter or k == filter then
 			transformLib(k, v)
+			merged[k] = getfenv(0)[k]
 		end
 	end
+	return merged
 end
 
 -- https://github.com/jiwonz/luau-task/blob/8bd870e4ca76a558e364950b352b8d9259fde5dc/src/lib/task.luau
@@ -32,7 +35,7 @@ do
 		end
 	end
 
-	local function resumeWithErrorCheck(thread, ...: any)
+	local function resumeWithErrorCheck(thread, ...)
 		local success, message = coroutine.resume(thread, ...)
 
 		if not success then
@@ -47,7 +50,7 @@ do
 		local processing = waitingThreads
 		waitingThreads = {}
 
-		for thread, data in processing do
+		for thread, data in pairs(processing) do
 			if coroutine.status(thread) ~= "dead" then
 				if type(data) == "table" and last_tick >= data.resume then
 					if data.start then

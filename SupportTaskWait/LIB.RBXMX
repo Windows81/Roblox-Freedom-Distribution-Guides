@@ -31,7 +31,7 @@
 
 function transformLib(name, funcs)
 	local result = {}
-	for k, v in next, funcs do
+	for k, v in pairs(funcs) do
 		result[k] = v
 	end
 
@@ -45,15 +45,18 @@ function transformLib(name, funcs)
 end
 
 function transformLibs(libTable, filter)
-	for k, v in next, libTable do
+	local merged = {}
+	for k, v in pairs(libTable) do
 		if not filter or k == filter then
 			transformLib(k, v)
+			merged[k] = getfenv(0)[k]
 		end
 	end
+	return merged
 end
 
--- https://github.com/vocksel/Sugar/blob/ff25d2ce87591d2534d0c23b7725c647b880b889/src/timing/yield.lua
--- Corresponds to `task.wait`.
+-- https://github.com/jiwonz/luau-task/blob/8bd870e4ca76a558e364950b352b8d9259fde5dc/src/lib/task.luau
+-- Corresponds to the entire `task` library.
 do
 	local function wrapThread(functionOrThread)
 		if type(functionOrThread) == "thread" then
@@ -63,7 +66,7 @@ do
 		end
 	end
 
-	local function resumeWithErrorCheck(thread, ...: any)
+	local function resumeWithErrorCheck(thread, ...)
 		local success, message = coroutine.resume(thread, ...)
 
 		if not success then
@@ -78,7 +81,7 @@ do
 		local processing = waitingThreads
 		waitingThreads = {}
 
-		for thread, data in processing do
+		for thread, data in pairs(processing) do
 			if coroutine.status(thread) ~= "dead" then
 				if type(data) == "table" and last_tick >= data.resume then
 					if data.start then
@@ -110,14 +113,29 @@ do
 		table.clear(deferredThreads)
 	end
 
+	local loopStarted = false
+	function triggerTaskLoop()
+		if loopStarted then
+			return
+		end
+
+		loopStarted = true
+		game:GetService("RunService").Heartbeat:Connect(function(d)
+			last_tick = os.clock()
+
+			processWaiting()
+			processDeferred()
+		end)
+	end
+
 	function task_wait(duration)
-		-- selene: allow(shadowing)
 		local duration = duration or 0
 
 		waitingThreads[coroutine.running()] = {
 			resume = last_tick + duration,
 			start = last_tick,
 		}
+		triggerTaskLoop()
 		return coroutine.yield()
 	end
 
@@ -127,6 +145,7 @@ do
 		local data = table.pack(...)
 		data.resume = last_tick + duration
 		waitingThreads[thread] = data
+		triggerTaskLoop()
 
 		return thread
 	end
@@ -134,6 +153,7 @@ do
 	function task_defer(functionOrThread, ...)
 		local thread = wrapThread(functionOrThread)
 		table.insert(deferredThreads, { thread = thread, args = table.pack(...) })
+		triggerTaskLoop()
 
 		return thread
 	end
@@ -141,6 +161,7 @@ do
 	function task_spawn(functionOrThread, ...)
 		local thread = wrapThread(functionOrThread)
 		resumeWithErrorCheck(thread, ...)
+		triggerTaskLoop()
 
 		return thread
 	end
@@ -148,15 +169,6 @@ do
 	function task_cancel(thread)
 		coroutine.close(thread)
 	end
-
-	spawn(function()
-		game:GetService("RunService").Heartbeat:Connect(function(d)
-			last_tick = os.clock()
-
-			processWaiting()
-			processDeferred()
-		end)
-	end)
 end
 
 -- https://github.com/download4/LuaPackages/blob/main/Packages/_Index/LuauPolyfill/LuauPolyfill/Math/clz32.lua
@@ -187,7 +199,7 @@ do
 	end
 end
 
-local TEMPLATE = {
+return transformLibs({
 	task = {
 		spawn = task_spawn,
 		defer = task_defer,
@@ -199,10 +211,7 @@ local TEMPLATE = {
 		countlz = bit32_countlz,
 		byteswap = bit32_byteswap,
 	},
-}
-return function(filter)
-	return transformLibs(TEMPLATE, filter)
-end
+})
 
 ]]></ProtectedString>
 				<int64 name="SourceAssetId">-1</int64>
