@@ -30,7 +30,7 @@ The best items contain "quick guides", along with a primer on how we reached our
 | [Make Asset URLs Permissive](./MakeAssetURLsPermissive)                                 | 0.3          |
 | [Allow Multiple Simultaneous Clients](./AllowMultipleClients)                           | 0.5          |
 | [Fix Occasional Crashes](./FixOccasionalCrashes)                                        | 1.0          |
-| [Constructive Solid Geometry (CSG) Research](./CSGv3Research)                           | 0.3          |
+| [Constructive Solid Geometry (CSG) Research](./CSGv3Research)                           | 0.5          |
 | [Patch Materials](./PatchMaterials)                                                     | 1.0          |
 | [Patch Transport-Layer Security (TLS) Verification](./PatchTLSVerification)             | 0.9          |
 | [Enable Port Agnosticness](./EnablePortAgnosticness)                                    | 0.7          |
