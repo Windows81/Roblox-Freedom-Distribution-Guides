@@ -20,7 +20,7 @@ Let's fix it.
    - The statement also _must_ be an `or` statement.
    - If there are multiple, keep note of them all.
 
-5. Also keep a note of the offset of `ebp` for a particular string buffer whose address gets pushed into the stack.
+5. Also keep a note of the offset of `ebp` for a particular string buffer whose address gets pushed onto the stack.
    - In v348, the offset is `0x264` [from `lea ecx,dword ptr ss:[ebp-250]`].
    - In v463, the offset is `0x264` [from `lea ecx,dword ptr ss:[ebp-264]`].
 

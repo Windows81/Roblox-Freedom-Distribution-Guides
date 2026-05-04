@@ -19,9 +19,9 @@ Rōblox generally stores CSG data via one of two ways:
 <!-- Credit to @kenso_d on Twitch for being timely with his request to be in the comments of this write-up. -->
 
 1. embedded within a `rbxl` place file, or
-2. as a separate `rbxm` remote asset with a numerical asset ID.
+2. as a separate `rbxm` remote asset with a numerical asset iden.
 
-Note that `rbxl` and `rbxm` are similar formats. In _both_ cases, CSG data stored in the `SSTR` chunk. In `rbxlx` and `rbxmx` streams, these would be found base64-encoded in XML tags named `BinaryString`.
+Note that `rbxl` and `rbxm` are similar formats. In _both_ cases, CSG data is stored in the `SSTR` chunk. In `rbxlx` and `rbxmx` streams, these would be found base64-encoded in XML tags named `BinaryString`.
 
 I used [`BinaryStrings.sh`](./BinaryStrings.sh) to extract the base64-encoded binary strings and store each one in its own file. This will be useful in comparisons.
 
@@ -59,7 +59,7 @@ CSGv3 unions are similar, but have `\x04` instead of `\x02`.
 
 ---
 
-### CSGv2
+## CSGv2
 
 ```rust
 #[binrw::binrw]
@@ -72,7 +72,7 @@ pub struct MeshData2{
 }
 ```
 
-### CSGv3
+## CSGv3
 
 ```rust
 #[binrw::binrw]
@@ -112,7 +112,7 @@ Only difference is there are also some unknown values after all the `faces` in `
 
 ---
 
-### CSG... v4? (a.k.a. `CSGMDL\x08`)
+## CSG... v4? (a.k.a. CSGMDL8)
 
 So you grab a fresh union out of 2024+ Studio, base64-decode it, XOR-strip with the same 31-byte cycle, and...
 
@@ -126,13 +126,17 @@ The header XOR cycle is unchanged. However, the rest of the CSG body (i.e., anyt
 
 Speaking of which...
 
-### CSGPHS
+## CSGPHS
 
 `CSGMDL` is the renderable mesh; **`CSGPHS`** is the physics/collision mesh that travels alongside it in the same `SSTR` chunk.
 
-Unlike with `CSGMDL` chunks, any `CSGPHS` chunks absolutely do not involve XOR encryption.
+Unlike `CSGMDL`, any `CSGPHS` chunks **absolutely do not involve XOR encryption at all**.
 
 Multiple `CSGPHS` versions have been in circulation over the years.
+
+A write-up for version 6 can be found [on the devforum](https://devforum.roblox.com/t/some-info-on-sharedstrings-for-custom-collision-data-meshparts-unions-etc/294588).
+
+### Physics Versions 3, 5, 6, 7
 
 ```rust
 #[binrw::binrw]
@@ -154,7 +158,7 @@ pub enum CSGPHS{
 }
 ```
 
-Versions 3 and 5 are functionally identical. They appear to support multiple physics meshes in a single `CSGPHS` chunk.
+Physics versions 3 and 5 are functionally identical. They appear to support multiple physics meshes in a single `CSGPHS` chunk.
 
 ```rust
 #[binrw::binrw]
@@ -166,7 +170,7 @@ pub struct CSGPHS3{
 }
 ```
 
-Version 6 adds a 40-byte `PhysicsInfo` chunk directly after the header, which consists of pre-calculated physical properties of the mesh.
+Physics version 6 adds a 40-byte `PhysicsInfo` chunk directly after the header, which consists of pre-calculated physical properties of the mesh.
 
 ```rust
 #[binrw::binrw]
@@ -188,7 +192,7 @@ pub struct CSGPHS6{
 }
 ```
 
-Version 7 appears to be similar to version 6, also containing `PhysicsInfo`.
+Physics version 7 appears to be similar to version 6, also containing `PhysicsInfo`.
 
 ```rust
 #[binrw::binrw]
@@ -202,19 +206,21 @@ pub struct CSGPHS7{
 }
 ```
 
-#### `CSGPHS\x08`
+### Physics Version 8
 
 Circa January 2026, version 8 was introduced which behaves completely differently.
 
-The good news is that `CSGPHS\x08` _has_ been reverse-engineered (huge thanks to `clv2`'s work, as implemented in [the Mesh Lab plugin](https://create.roblox.com/store/asset/90513270797757/Mesh-Lab)), and the layout is almost certainly what `CSGMDL\x08` is built on top of.
+The good news is that CSGPHS8 _has_ been reverse-engineered. We'll refer to Clv2's implemention in [the Mesh Lab plugin](./Mesh%20Lab%202026-01-09.rbxmx).
 
-After XOR-stripping the header, `CSGPHS\x08` looks like this:
+As of this guide's writing, Mesh Lab was last updated on 2026-01-09. A more recent version can be found [on Roblox.com](https://create.roblox.com/store/asset/90513270797757/Mesh-Lab) via asset iden _90513270797757_.
 
-```
-CSGPHS\x08\x00\x00\x00  (10 bytes magic, like CSGMDL)
-\x00\x00                (2 bytes alignment / version-minor — keep but ignore)
-<zstd payload>          (everything from offset 12 onward is zstd)
-```
+The CSGPHS8 format looks like this:
+
+| Data                      | Description                                                   |
+| ------------------------- | ------------------------------------------------------------- |
+| `CSGPHS\x08\x00\x00\x00 ` | 10 bytes magic, like CSGMDL                                   |
+| `\x00\x00`                | 2 alignment bytes / version-minor; keep but ignore            |
+| _zstd payload_            | everything from offset 12 onward is compressed with Zstandard |
 
 Decompress everything with `zstd` from byte 12 onwards, and you get a flat blob with a structure like:
 
@@ -242,15 +248,15 @@ pub struct CSGPHS8Body{
 }
 ```
 
-Two parallel encodings. Most hulls live in `clers_buffer` + `vertices` (compressed); pathological hulls that Edgebreaker can't encode get dumped verbatim into `raw_geometry`. To recover the full set, decode both and concatenate.
+#### Hull Compression
 
----
+Edgebreaker is a 1990s mesh-compression algorithm by Jarek Rossignac.
 
-### Edgebreaker / CLERS; How Rōblox Compresses Hulls
+When a triangle is visited in a spiral order, the algorithm emits one of five symbols describing how the next triangle relates to the current cursor edge: C, L, E, R, and S.
 
-Edgebreaker is a 1990s mesh-compression algorithm by Jarek Rossignac. Each triangle visit emits one of five symbols — **C**, **L**, **E**, **R**, **S** — describing how the next triangle relates to the current cursor edge. The decoder rebuilds adjacency on the fly using a "zip" routine that re-stitches boundary edges as new triangles arrive.
+The decoder rebuilds adjacency on the fly using a "zip" routine that re-stitches boundary edges as new triangles arrive.
 
-Rōblox stores the per-triangle CLERS labels as a packed bitstream. **C** is encoded as a single `0` bit. The other four symbols start with a `1` bit followed by two more bits:
+Per Clv2's implementation, Rōblox stores the per-triangle CLERS labels as a packed bitstream, where _C_ is encoded as a single `0` bit. The other four symbols start with a `1` bit followed by two more bits:
 
 | Symbol | Bits  | What it means                                                |
 | ------ | ----- | ------------------------------------------------------------ |
@@ -284,8 +290,3 @@ def read_bit() -> int:
 ```
 
 Each hull starts with three vertices (indices 0, 1, 2) and a single seeded triangle, then `decode_recursive` walks the bitstream until it sees an `E`. Vertex indices are local-to-hull — the decoder maintains a `global_vert_offset` that increments by however many vertices the hull consumed, so successive hulls slice into the global `vertices` array in order.
-
----
-
-More research:
-https://devforum.roblox.com/t/some-info-on-sharedstrings-for-custom-collision-data-meshparts-unions-etc/294588

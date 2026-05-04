@@ -1,4 +1,4 @@
-**\*Note:** This guide is not intended for Rōblox Freedom Distribution; it targets versions significantly older than 0.347 (released in July 2018).\*
+**Note:** This guide is not intended for Rōblox Freedom Distribution; it targets versions **significantly** older than 0.347 (released in July 2018).
 
 We've included the guide anyways for anyone who may need it.
 

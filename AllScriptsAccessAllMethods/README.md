@@ -7,35 +7,33 @@ Prepared patches are availble, assuming that [you have ASLR disabled](https://gi
 - [`./v463-server.1337` (RCC)](./v463-server.1337)
 - [`./v463-player.1337` (Player)](./v463-player.1337)
 
-I wanted to use an FFlag initialised but not _really_ being used anywhere. For v463, I chose `FFlag::Q220PermissionsSettings` after my own personal research.
+This patch requires selecting a FFlag to bind this toggle to. I wanted to use an FFlag initialised but not _really_ being used anywhere important. For v463, I chose `FFlag::Q220PermissionsSettings` after my own personal research.
 
 However, we'll be causing undefined behaviour with `FFlag::ParallelLua` by overwriting some of the branch logic it uses.
 
 These steps should be followed for both RCC and the client to achieve your desired result.
 
-1. Before anything else, make sure [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
+0. Before anything else, make sure [you have ASLR disabled](https://github.com/adamhlt/ASLR-Disabler/releases).
    - Otherwise, the FFlag addresses will change after each program-run and x32dbg won't be able to account for that.
 
-2. Open x32dbg and attach your executable.
+1. Open x32dbg and attach your executable.
 
-3. Search for the ROT13 string: `Gur pheerag vqragvgl (%q) pnaabg %f (ynpxvat crezvffvba %q`.
+2. Search for the ROT13 string: `Gur pheerag vqragvgl (%q) pnaabg %f (ynpxvat crezvffvba %q)`.
    - This cypherstring correponds to `The current identity (%d) cannot %s (lacking permission %d)`.
 
-4. Add a breakpoint at function entry (`push ebp`).
+3. Add a breakpoint at function entry (`push ebp`).
 
-5. Run a command in the dev console to trigger the error message. Perhaps something like:
+4. Run a command in the dev console to trigger the error message. Perhaps something like:
 
 ```lua
 game.HttpService:RequestInternal({Url = "https://google.com"}):Start(function(success, dataTable) print(success) end)
 ```
 
-6. Once the breakpoint is hit, go one level up the call stack.
+5. Once the breakpoint is hit, go one level up the call stack.
 
 ---
 
-###
-
-7. FFlag values are often stored in static memory addresses. Locate the address for `Q220PermissionsSettings`.
+6. FFlag values are often stored in static memory addresses. Locate the address for `Q220PermissionsSettings`.
    - To do this, you'd want to search for user-module code referencing the `Q220PermissionsSettings` string.
    - I personally receive _one_ result in v463 (as shown below). If you get more than one, look for the result which looks most similar to mine.
    - I'll take the statement above the string declaration (`push robloxplayerbeta.2539BC8`).
@@ -59,7 +57,7 @@ game.HttpService:RequestInternal({Url = "https://google.com"}):Start(function(su
 004E49CD | CC                       | int3                                    |
 ```
 
-8. Apply the following patches, keeping in mind to
+7. Apply the following patches, keeping in mind to
 
 - Replace all instances in my example of `2539BC8` with a new value specific to your implementation, and to
 - Look out for references to `84494F` and `844984` in the `je` statements.
@@ -118,13 +116,13 @@ game.HttpService:RequestInternal({Url = "https://google.com"}):Start(function(su
  00844987 | 803D DC905302 00         | cmp byte ptr ds:[25390DC],0             |
 ```
 
-If you're using x32dbg, there should be 17 patches here total.
+If you're using x32dbg on 32-bit Rōblox, there should be 17 patches here total.
 
 ---
 
 **Note:** by default, classes of high security can't be contained by measly variables in user scripts. So we apply additional patches against `Class security check`.
 
-9. Search for string references to `Class security check`. You'll find four grouped together in pairs pretty close to each other.
+8. Search for string references to `Class security check`. You'll find four grouped together in pairs pretty close to each other.
 
 | Address    | Disassembly                     | String Address | String                   |
 | ---------- | ------------------------------- | -------------- | ------------------------ |
@@ -138,9 +136,9 @@ If you're using x32dbg, there should be 17 patches here total.
   - Both begin with `push ebp`, then `mov ebp, esp`, and finish with `ret 4`. And each should be about 120 bytes big.
   - In some cases, you may find random instructions (designated `[rubbish]` below). Ignore those.
 
-10. Perform the patches below.
-    - The long chain of `nop` instructions is what completely replaces the first function body.
-    - Look out for lettered annotations.
+9. Perform the patches below.
+   - The long chain of `nop` instructions is what completely replaces the first function body.
+   - Look out for lettered annotations.
 
 ```patch
  0067A15C | CC                       | int3                                    |
@@ -313,7 +311,7 @@ If you're using x32dbg, there should be 17 patches here total.
 +0067A1D2 | 90                       | nop                                     |
 +0067A1D3 | 90                       | nop                                     |
 +0067A1D4 | 90                       | nop                                     |
-+0067A1D5 | 803D C89B5302 01         | cmp byte ptr ds:[2539BC8],1             | {E} òófset 15 (0xF) bytes from the end of the `nop`'ed function call
++0067A1D5 | 803D C89B5302 01         | cmp byte ptr ds:[2539BC8],1             | {E} offset 15 (0xF) bytes from the end of the nop'd function call
 +0067A1DC | 89E5                     | mov ebp,esp                             |
 +0067A1DE | 75 13                    | jne robloxplayerbeta.67A1F3             | 67A1F3 {D} corresponds to right after the first
  0067A1E0 | 5D                       | pop ebp                                 |

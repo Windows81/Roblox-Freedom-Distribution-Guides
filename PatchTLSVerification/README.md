@@ -23,9 +23,9 @@ This practice is not recommended for most uses. However, RFD's current implement
 
 ## Quick Guide
 
-1. Search among user-referenced strings for `"CURLOPT_SSL_VERIFYPEER"` and `"CURLOPT_SSL_VERIFYHOST"`, taking into account for results from _both_ searches.
+1. Search among user-referenced strings for `"CURLOPT_SSL_VERIFYPEER"` and `"CURLOPT_SSL_VERIFYHOST"`, taking into account results from _both_ searches.
 
-2. For each result, navigating _up_ about 10 instructions until you find one until you see a constant value `0x40` or `0x51`.
+2. For each result, navigate _up_ about 10 instructions until you see a constant value `0x40` or `0x51`.
    - Ex: `push 40`, `mov r8d, 51`, et c.
    - If one is not found, it is probably safe to skip to the next result.
 
@@ -33,7 +33,7 @@ This practice is not recommended for most uses. However, RFD's current implement
    - Ex: `push 1`, et c.
    - If one is not found **here**, best to set a breakpoint at the call that takes place _after_ and take other unexplained measures.
 
-4. Re-assemble the statement from (3) so as to replace `1` or `2` with `0`.
+4. Re-assemble the statement from (3) to replace `1` or `2` with `0`.
 
 ## Background
 
@@ -65,7 +65,7 @@ CURLOPT_FOLLOWLOCATION = 0x34,
 
 We do not specifically need to change `CURLOPT_FOLLOWLOCATION`. I just use it as an example since its name is present in the 2016 source code.
 
-But rather, I am interested in
+But rather, I am interested in:
 
 - `CURLOPT_SSL_VERIFYPEER` to be set to 0, and
 - `CURLOPT_SSL_VERIFYHOST` to be set to 0 (only if explicitly provided).
@@ -100,7 +100,7 @@ push dword ptr ds:[edi+148]
 call robloxplayerbeta.1540770
 ```
 
-Arguments are put on the stack in reverse order in x86. So the `0` or `1` disables or enables the `CURLOPT_SSL_VERIFYPEER` option, depending on branching action. Let's patch the second one.
+Arguments are put onto the stack in reverse order in x86. So the `0` or `1` disables or enables the `CURLOPT_SSL_VERIFYPEER` option, depending on the branching logic. Let's patch the second one.
 
 ```patch
 - push 0
@@ -110,7 +110,7 @@ push dword ptr ds:[edi+148]
 call robloxplayerbeta.1540770
 ```
 
-We're not done yet! Because we need to ensure that `CURLOPT_SSL_VERIFYHOST` is also set to `0`. Note that unlike the previous cURL option, the value that we need to replace from is `2`, instead of `1`.
+We're not done yet! We also need to ensure that `CURLOPT_SSL_VERIFYHOST` is also set to `0`. Note that unlike the previous cURL option, the value that we need to replace from is `2`, instead of `1`.
 
 ```c
 CURLOPT_SSL_VERIFYHOST = 0x51,

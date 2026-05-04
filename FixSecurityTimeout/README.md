@@ -7,7 +7,7 @@ In some cases, the 2021E RCC disconnects clients with an _error 266_ some time a
 The dev console says it's a "Security timeout" by RCCService.
 ![image](image-2.png)
 
-If you're having problems, use [`Security Timeout.1337`](./v463-server.1337) with x32dbg on the 2021E RCC.
+If you're having problems, use [`./v463-server.1337`](./v463-server.1337) with x32dbg on the 2021E RCC.
 
 Pre-patched versions (updated as of 2024-10-02) are in [`Server.zip`](./Server.zip).
 

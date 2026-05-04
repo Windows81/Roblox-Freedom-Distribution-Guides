@@ -1,0 +1,6724 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<External>null</External>
+	<External>nil</External>
+	<Item class="Folder" referent="RBXD372D08BB53C42FA877393B9B3F1EF56">
+		<Properties>
+			<BinaryString name="AttributesSerialize"></BinaryString>
+			<string name="Name">MeshLabUpdated/1/9/2026</string>
+			<int64 name="SourceAssetId">-1</int64>
+			<BinaryString name="Tags"></BinaryString>
+		</Properties>
+		<Item class="Script" referent="RBXFA00463B17584945933A005A43DA8ACD">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<bool name="Disabled">true</bool>
+				<Content name="LinkedSource"><null></null></Content>
+				<string name="Name">Main</string>
+				<string name="ScriptGuid">{B0698DBC-9AE8-4BCC-B44E-2EE1E6796726}</string>
+				<ProtectedString name="Source"><![CDATA[local RunService = game:GetService('RunService');
+local CoreGui = game:GetService('CoreGui');
+local Selection = game:GetService('Selection');
+
+local toolbar;
+
+function SetupButton(buttonInfo, module, gui: ScreenGui)
+	local pluginButton = toolbar:CreateButton(
+		buttonInfo.Name,
+		buttonInfo.Description,
+		buttonInfo.Icon
+	);
+	
+	pluginButton.ClickableWhenViewportHidden = false;
+
+	local currentGui;
+	
+	pluginButton.Click:Connect(function()
+		if currentGui then
+			currentGui:Destroy(); 
+			currentGui = nil;
+			pluginButton:SetActive(false)
+		else
+			local oldUI = CoreGui:FindFirstChild(gui.Name);
+			if oldUI then
+				oldUI:Destroy();
+			end
+			
+			currentGui =  gui:Clone();
+			currentGui.Parent = CoreGui;
+
+			module:Initialize(currentGui, plugin, Selection:Get()[1]);
+			pluginButton:SetActive(true)
+		end
+	end)
+end
+
+if RunService:IsEdit() then
+
+	toolbar = plugin:CreateToolbar('Mesh Lab');
+
+	
+	SetupButton(
+		{
+			Name = 'Mesh Lab',
+			Description = 'Quickly edit meshes!',
+			Icon = 'rbxassetid://120458884168709'
+		},
+
+		require(script.MeshLab),
+		script.Parent.MeshLab
+	)
+
+
+end]]></ProtectedString>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+			</Properties>
+			<Item class="ModuleScript" referent="RBX06C5EF2F52614FFD870DA7262B35FA31">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">MeshLab</string>
+					<string name="ScriptGuid">{5E89278C-4634-4533-8494-0648B4192638}</string>
+					<ProtectedString name="Source"><![CDATA[local TweenService = game:GetService("TweenService");
+
+local MeshLab = {}
+
+local ScalingController = require(script.Parent.ScalingController);
+
+function MeshLab._categoryHandler(tool: table, toolFrame: Frame, gui: ScreenGui)
+	local category = tool.Category;
+	local frame = gui.Frame;
+
+	if category then
+		
+		local function updateLayoutOrder(category)
+			local smallestLayoutOrder = math.huge
+			for _, toolFrame in category.Content:GetChildren() do
+				if toolFrame.Name == "Tool" and toolFrame.LayoutOrder < smallestLayoutOrder then
+					smallestLayoutOrder = toolFrame.LayoutOrder;
+				end
+				category.LayoutOrder = smallestLayoutOrder;
+			end
+		end
+		
+		local foundCategory = frame:FindFirstChild("Category_"..category);
+		if foundCategory then
+			toolFrame.Parent = foundCategory.Content;
+			updateLayoutOrder(foundCategory);
+		else
+			local newCategory = gui.Prefabs.Category:Clone();
+			newCategory.Name = `Category_{category}`;
+			newCategory.Topbar.Title.Text = category;
+			
+			newCategory.Topbar.FoldButton.MouseButton1Click:Connect(function()
+				newCategory.Content.Visible = not newCategory.Content.Visible;
+				newCategory.Topbar.FoldButton.Arrow.ImageLabel.Rotation = newCategory.Content.Visible and 90 or 0;
+			end)
+			
+			newCategory.Parent = frame;
+			toolFrame.Parent = newCategory.Content;
+			updateLayoutOrder(newCategory)
+		end
+	else
+		toolFrame.Parent = frame
+	end
+end
+
+function MeshLab.LoadTools(gui: ScreenGui, tools: {ModuleScript}, promptLibrary)
+	local frame = gui.Frame;
+	local toolPrefab = gui.Prefabs.Tool;
+
+	local baseColor = toolPrefab.BackgroundColor3
+	local hoverColor = Color3.new(baseColor.R + 0.1, baseColor.G + 0.1, baseColor.B + 0.1);
+
+	for _, toolModule in tools do
+		if toolModule:GetAttribute("Hidden") then continue end;
+		
+		local tool = require(toolModule);
+		
+		local toolFrame = toolPrefab:Clone()
+		toolFrame.Tooltip.Text = tool.Name
+		toolFrame.Icon.Image = tool.Icon
+		toolFrame.LayoutOrder = tool.LayoutOrder
+		MeshLab._categoryHandler(tool, toolFrame, gui);
+		
+		toolFrame.InputBegan:Connect(function(input: InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				toolFrame.Tooltip.Visible = true;
+				TweenService:Create(toolFrame, TweenInfo.new(0.3), {BackgroundColor3 = hoverColor}):Play();
+			elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
+				tool:Run(promptLibrary)
+			end
+		end)
+		
+		toolFrame.InputEnded:Connect(function(input:InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				toolFrame.Tooltip.Visible = false;
+				TweenService:Create(toolFrame, TweenInfo.new(0.3), {BackgroundColor3 = baseColor}):Play();
+			end
+		end)
+	end
+end
+
+function MeshLab.CreatePrompt(gui: ScreenGui)
+	return function()
+		local prompt = gui.Prefabs.Prompt:Clone();
+		prompt.Parent = gui;
+		prompt.UIScale.Scale = gui.Frame.UIScale.Scale;
+		
+		local dragDetector = prompt.UIDragDetector;
+		local dragBar = prompt.Drag;
+		
+		local base = dragBar.BackgroundColor3
+		local hold = Color3.new(
+			math.clamp(base.R + 0.2, 0, 1),
+			math.clamp(base.G + 0.2, 0, 1),
+			math.clamp(base.B + 0.2, 0, 1)
+		)
+		
+		dragDetector.DragStart:Connect(function()
+			dragBar.BackgroundColor3 = hold
+		end)
+		
+		dragDetector.DragEnd:Connect(function()
+			dragBar.BackgroundColor3 = base
+		end)
+		
+		local layoutOrder = 0;
+		
+		return {
+			Prompt = prompt,
+			
+			AddToggle = function(self, label, default)
+				local toggle = gui.Prefabs.PromptPrefabs.Toggle:Clone();
+				toggle.Label.Text = label or '';
+				toggle.LayoutOrder = layoutOrder;
+				toggle.Parent = prompt.Content;
+				layoutOrder += 1;
+				
+				local check = toggle.ToggleButton.Check
+				check.Visible = default;
+				
+				toggle.ToggleButton.MouseButton1Click:Connect(function()
+					check.Visible = not check.Visible
+				end)
+				
+				toggle.Parent = prompt.Content
+				
+				return function() return check.Visible end;
+			end,
+			
+			AddLabel = function(self, label)
+				local textLabel = gui.Prefabs.PromptPrefabs.Label:Clone();
+				textLabel.Text = label or '';
+				textLabel.LayoutOrder = layoutOrder;
+				textLabel.Parent = prompt.Content;
+				layoutOrder += 1;
+				
+				return label;
+			end,
+			
+			AddButton = function(self, text, callback)
+				local button = gui.Prefabs.PromptPrefabs.Button:Clone();
+				button.Text = text or '';
+				button.LayoutOrder = layoutOrder;
+				button.Parent = prompt.Content;
+				layoutOrder += 1;
+				
+				button.MouseButton1Click:Connect(callback)
+			end,
+			
+			AddUVMap = function(self)
+				local map = gui.Prefabs.PromptPrefabs.UVDisplay:Clone();
+				map.LayoutOrder = layoutOrder;
+				map.Parent = prompt.Content;
+				layoutOrder += 1;
+				
+				return map;
+			end,
+			
+			
+		}
+	end
+end
+
+function MeshLab._updateTooltips(gui: ScreenGui, left)
+	local frame = gui.Frame;
+
+	local newPos = left and UDim2.new(1, 20, 0.5, 0) or UDim2.new(0, -20, 0.5, 0)
+	local newAnchor = left and Vector2.new(0, 0.5) or Vector2.new(1, 0.5)
+
+	for _, toolFrame in frame:GetChildren() do
+		if toolFrame.Name ~= "Tool" then continue end;
+		toolFrame.Tooltip.AnchorPoint = newAnchor;
+		toolFrame.Tooltip.Position = newPos;
+	end
+end
+
+function MeshLab.StartDragger(gui: ScreenGui, mouse)
+	local frame = gui.Frame
+	local dragBar = frame.Drag
+	local dragDetector: UIDragDetector = dragBar.Hitbox.UIDragDetector
+
+	local base = dragBar.BackgroundColor3
+	local hold = Color3.new(
+		math.clamp(base.R + 0.2, 0, 1),
+		math.clamp(base.G + 0.2, 0, 1),
+		math.clamp(base.B + 0.2, 0, 1)
+	)
+
+	local SNAP_MARGIN = 20
+	local dragOffset
+
+	local function updateDrag()
+		if not dragOffset then return end
+		local mousePos = Vector2.new(mouse.X, mouse.Y)
+		local topLeft = mousePos - dragOffset
+		frame.Position = UDim2.fromOffset(topLeft.X, topLeft.Y)
+	end
+
+	dragDetector.DragStart:Connect(function()
+		dragBar.BackgroundColor3 = hold
+		local currentAnchorScreen = frame.AbsolutePosition + (frame.AnchorPoint * frame.AbsoluteSize)
+		dragOffset = Vector2.new(mouse.X, mouse.Y) - currentAnchorScreen
+	end)
+
+	dragDetector.DragContinue:Connect(function()
+		updateDrag()
+	end)
+
+	dragDetector.DragEnd:Connect(function()
+		dragBar.BackgroundColor3 = base
+		dragOffset = nil
+
+		local parentPos = frame.Parent.AbsolutePosition
+		local parentW = frame.Parent.AbsoluteSize.X
+		local w = frame.AbsoluteSize.X
+		local ax = frame.AnchorPoint.X
+
+		local localLeft = frame.AbsolutePosition.X - parentPos.X
+		local centerX = localLeft + w * 0.5
+		local snapLeft = (centerX < parentW * 0.5)
+
+		local targetX
+		if snapLeft then
+			targetX = SNAP_MARGIN + ax * w
+		else
+			targetX = parentW - SNAP_MARGIN - (1 - ax) * w
+		end
+
+		MeshLab._updateTooltips(gui, snapLeft)
+
+		local goal = {
+			Position = UDim2.new(0, targetX, frame.Position.Y.Scale, frame.Position.Y.Offset)
+		}
+		TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal):Play()
+	end)
+end
+
+
+function MeshLab:Initialize(gui: ScreenGui, plugin)
+	local promptLibrary = self.CreatePrompt(gui);
+	
+	self.LoadTools(gui, script.Parent.Tools:GetChildren(), promptLibrary);
+	self.StartDragger(gui, plugin:GetMouse());
+	ScalingController:Initialize(gui);
+end
+
+return MeshLab
+]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="ModuleScript" referent="RBXD812166C9AB8430D8E9046F9A92426D4">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<Content name="LinkedSource"><null></null></Content>
+					<string name="Name">ScalingController</string>
+					<string name="ScriptGuid">{AE38A268-98F8-42F3-889B-80E1D13B8344}</string>
+					<ProtectedString name="Source"><![CDATA[local ScalingController = {
+	Guis = {};	
+};
+local camera = workspace.CurrentCamera;
+
+ScalingController.CurrentScale = 1;
+
+function ScalingController:UpdateScale()
+	local guis = ScalingController.Guis;
+	
+	for _, gui in guis do 
+		for _, scales: UIScale in gui:GetDescendants() do
+			if not scales:IsA"UIScale" then continue end;
+			if scales:GetAttribute("ManualScale") then continue end;
+			if scales:FindFirstAncestorOfClass("Configuration") then continue end;
+			
+			local multiplier = scales:GetAttribute("Multiplier") or 1
+			
+			scales.Scale = self:GetScale() * multiplier;
+		end
+	end
+end
+
+function ScalingController:GetScale()
+	local viewportSizeX = workspace.CurrentCamera.ViewportSize.X;
+	local scale = viewportSizeX / 1920;
+	self.CurrentScale = scale;
+
+	return scale;
+end;
+
+function ScalingController:Initialize(gui)
+	if table.find(self.Guis, gui) then return end;
+	
+	table.insert(self.Guis, gui);
+	task.spawn(function()
+		self:UpdateScale();
+	end)
+end
+
+camera:GetPropertyChangedSignal('ViewportSize'):Connect(function() ScalingController:UpdateScale() end);
+
+return ScalingController;]]></ProtectedString>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+			</Item>
+			<Item class="Folder" referent="RBXCBDAFAA73B0F43D5915E238F4045B577">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<string name="Name">Tools</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="ModuleScript" referent="RBX01BA159307B048CCAD5E579491C334F8">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">ViewHulls</string>
+						<string name="ScriptGuid">{77056BBB-D0AD-4C62-AF70-3C3C0E65635B}</string>
+						<ProtectedString name="Source"><![CDATA[local PhysicsSettings = settings().Physics
+
+local module = {
+	Icon = "rbxassetid://72584811424700",
+	Name = "View Collision Geometry",
+	LayoutOrder = 1,
+	Category = "Collision"
+}
+
+function module:Run()
+	PhysicsSettings.ShowDecompositionGeometry = not PhysicsSettings.ShowDecompositionGeometry
+end
+
+return module
+]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBX0A5898F1395B4F8686443726694C2EE1">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">LoadHulls</string>
+						<string name="ScriptGuid">{D05F3D38-D674-41BE-AF1F-7723B6757D4C}</string>
+						<ProtectedString name="Source"><![CDATA[local AssetService = game:GetService("AssetService");
+
+local module = {
+	Icon = "rbxassetid://124946692047368",
+	Name = "Load Editable Collision Geometry",
+	LayoutOrder = 2,
+	Category = "Collision"
+}
+
+local modules = script.Parent.Parent.Modules;
+
+local CollisionData = require(modules.CollisionData);
+local rbxmParse = require(modules.rbxmParse);
+
+local COLOR_POOL = {
+	Color3.new(1, 0, 0);
+	Color3.new(0, 1, 0);
+	Color3.new(0, 0, 1);
+	Color3.new(1, 1, 0);
+	Color3.new(1, 0, 1);
+	Color3.new(0, 1, 1);
+}
+
+
+--[==[
+
+LOAD HULLS
+
+Finds collision data
+Finds collision version
+If new version, warn and stop
+if supported version feed to the right parser
+if older version, force update to latest version through changing fidelity, then feed to the right parser
+
+PARSER : 
+
+Returns hulls data in this format : 
+
+Hulls = { 
+	[HULL1] { 
+		Vertices = {
+			Vector3.new(?, ?, ?),
+			...
+		},
+		Triangles = {
+			{?, ?, ?},
+			...
+		}
+	}
+} 
+
+
+]==]--
+
+function module:Run()
+	local obj = game:GetService("Selection"):Get()[1]
+	if not (obj:IsA("MeshPart") or obj:IsA("UnionOperation")) then warn('[MESH LAB] Please select a MeshPart') return end
+
+	local latestVersion = 0;
+	for _, module in script:GetChildren() do
+		local collisionVersion = tonumber(module.Name:sub(7));
+		if not collisionVersion then continue end;
+
+		if collisionVersion > latestVersion then
+			latestVersion = collisionVersion;
+		end
+	end
+
+	local parser;
+
+	local function loadCollisionData()
+		local rbxmBuffer = game:GetService("SerializationService"):SerializeInstancesAsync({obj})
+
+		local sstrChunk = rbxmParse.GetSSTR(rbxmBuffer, obj);
+		local sharedStrings = sstrChunk.SharedStrings;
+
+		local collisionIndex = nil
+		for i, s in sharedStrings do
+			if s.str:sub(1,6) ~= "CSGPHS" then continue; end
+			local collisionVer = buffer.readu32(buffer.fromstring(s.str:sub(7, 11)), 0);
+
+			if collisionVer == 0 then
+				warn('[MESH LAB] selected mesh uses Box Collision, please change it to Default, Hull or PreciseConvexDecomposition');
+			elseif collisionVer > latestVersion then
+				warn(`[MESH LAB] New collision version ({collisionVer}) please inform plugin creators`)
+				return
+			elseif script:FindFirstChild(`CSGPHS{collisionVer}`) then
+				parser = require(script:FindFirstChild(`CSGPHS{collisionVer}`))
+			else
+				local currentFidelity = obj.CollisionFidelity;
+				obj.CollisionFidelity = Enum.CollisionFidelity.Box;
+				obj.CollisionFidelity = currentFidelity;
+				return loadCollisionData()
+			end
+			return sharedStrings, i
+		end
+	end
+
+	local sharedStrings, collisionIndex = loadCollisionData();
+
+	if not collisionIndex then warn('[MESH LAB] Failed to find collision data') return end;
+
+	local collisionData = sharedStrings[collisionIndex].str;
+
+	if not collisionData then warn('[MESH LAB] Failed to find collision data') return end;
+
+	if not parser then warn('[MESH LAB] Failed to fetch parser for collision data') return end;
+
+
+	local collisionBuffer = buffer.fromstring(collisionData);
+	local hulls = parser(collisionBuffer, obj);
+
+	local function createEditableMesh(hull)
+		local eMesh: EditableMesh = AssetService:CreateEditableMesh()
+		local vertexIds = table.create(#hull.Vertices)
+
+		for _, vertex in hull.Vertices do
+			local vId = eMesh:AddVertex(vertex)
+			table.insert(vertexIds, vId)
+		end
+
+		for i, tri in hull.Triangles do
+			if not vertexIds[tri[1]] then
+				warn(tri[1],tri[2],tri[3],#hull.Vertices)
+			end
+			eMesh:AddTriangle(
+				vertexIds[tri[1]],
+				vertexIds[tri[2]],
+				vertexIds[tri[3]]
+			)
+		end
+
+		eMesh:RemoveUnused()
+		return eMesh
+	end
+
+	if obj:FindFirstChild("DecomposedMesh") then
+		obj.DecomposedMesh:Destroy()
+	end
+	local decomposedModel = Instance.new("Model")
+	decomposedModel.Name = "DecomposedMesh"
+	decomposedModel.Parent = obj
+
+	local totalVerts = 0
+	local scale = 1
+
+	local meshSize = obj.Size
+	local meshScale = obj.MeshSize
+
+	for i, hull in hulls do
+		if #hull.Triangles > 0 then
+			for j, vertex in hull.Vertices do
+				local scaledVertex = (vertex / meshScale) * meshSize;
+				local newPos = obj.CFrame:PointToWorldSpace(scaledVertex)
+				hull.Vertices[j] = newPos
+				totalVerts += 1
+			end
+
+			local meshCenter = Vector3.zero
+			if #hull.Vertices > 0 then
+				local sum = Vector3.zero
+				for _, v in hull.Vertices do sum += v end
+				meshCenter = sum / #hull.Vertices
+			else
+				meshCenter = obj.Position
+			end
+
+			for j, vertex in hull.Vertices do
+				hull.Vertices[j] = vertex - meshCenter;
+			end
+
+			local editableMesh: EditableMesh = createEditableMesh(hull)
+			local meshPart: MeshPart = AssetService:CreateMeshPartAsync(Content.fromObject(editableMesh), {CollisionFidelity = Enum.CollisionFidelity.Box})
+
+			local rng = Random.new(i)
+			meshPart.Color = COLOR_POOL[rng:NextInteger(1, #COLOR_POOL)]
+			meshPart.DoubleSided = true;
+			meshPart.Position = meshCenter;
+			meshPart.Anchored = true
+			meshPart.Parent = decomposedModel
+			meshPart.Name = i
+
+			if hull.IsRaw then
+				meshPart:SetAttribute("IsRaw", true)
+			end
+
+			hull.MeshPart = meshPart
+		else
+			local emptyHull = Instance.new("Folder")
+			emptyHull.Name = i
+			emptyHull.Parent = decomposedModel
+
+			emptyHull:SetAttribute("IsRaw", true) 
+			emptyHull:SetAttribute("ZeroFaces", true)
+
+			hull.MeshPart = emptyHull
+		end
+	end
+
+	warn(`[MESH LAB] Loaded {#hulls} convex hulls`)
+end
+
+return module]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="ModuleScript" referent="RBX80775B0A0DC54280A203AD476462E738">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<Content name="LinkedSource"><null></null></Content>
+							<string name="Name">CSGPHS8</string>
+							<string name="ScriptGuid">{1990A513-532C-48B3-B477-5050572ED966}</string>
+							<ProtectedString name="Source"><![CDATA[local EncodingService = game:GetService("EncodingService");
+
+type Box = {
+	Min: Vector3,
+	Max: Vector3
+}
+
+type CSGPHS8 = {
+	GeomType: number,
+
+	HullCount: number,
+
+	TotalVerts: number,
+	TotalFaces: number,
+
+	FirstHullVertCount: number,
+	FirstHullFaceCount: number,
+
+	RawHullsSize: number,
+
+	CLERSbitCount: number,
+	CLERSbufferSize: number,
+
+	VerticesSize: number,
+
+	BoundingBox: Box,
+
+	RawHulls: buffer,
+	CLERSbuffer: buffer,
+	Vertices: {Vector3}
+}
+
+local DEBUG = false;
+
+local function tobytestr(buf)
+	return buffer.tostring(buf):gsub(".", function(x) return `\\{x:byte()}` end)
+end
+
+local function ParseV8(collisionData: buffer) : CSGPHS8
+	local count = 0;
+
+	local function readu8()
+		local int = buffer.readu8(collisionData, count);
+		count += 1;
+		return int;
+	end
+
+	local function readu32()
+		local int = buffer.readu32(collisionData, count);
+		count += 4;
+		return int;
+	end
+
+	local function readf32()
+		local f32 = buffer.readf32(collisionData, count);
+		count += 4;
+		return f32;
+	end
+
+	local function readu8chain(n)
+		local chain =  buffer.readstring(collisionData, count, n);
+		count += n;
+		return buffer.fromstring(chain);
+	end
+
+	local function readstr(n)
+		local str = buffer.readstring(collisionData, count, n);
+		count += n;
+		return str;
+	end
+
+	local function readVector3()
+		return Vector3.new(readf32(), readf32(), readf32())
+	end
+
+	local V8 : CSGPHS8 = {} do
+		assert(readstr(6) == "CSGPHS")
+		assert(readu32() == 8)
+
+		V8.GeomType = readu8()
+		readu8() -- reserved/unused/0 (pad?)
+
+		do -- COMPRESSION CHECK
+			if readu32() == 0xFD2FB528 then
+
+				local collisionDataString = buffer.tostring(collisionData);
+				local compressedBuffer = buffer.fromstring(collisionDataString:sub(13));
+				local decompressed = EncodingService:DecompressBuffer(compressedBuffer, Enum.CompressionAlgorithm.Zstd);
+				collisionData = buffer.fromstring(collisionDataString:sub(1, 12)..buffer.tostring(decompressed));
+			end
+
+			count -= 4 -- REVERT COMPRESSION CHECK INCR
+		end
+
+		V8.HullCount = readu32();
+
+		V8.TotalVerts = readu32();
+		V8.TotalFaces = readu32();
+
+		V8.FirstHullVertCount = readu32();
+		V8.FirstHullFaceCount = readu32();
+
+		V8.RawHullsSize = readu32();
+		V8.CLERSbitCount = readu32();
+
+		V8.CLERSbufferSize = readu32();
+		V8.VerticesSize = readu32();
+
+		V8.BoundingBox = {
+			Min = readVector3();
+			Max = readVector3();
+		};
+
+		V8.RawHulls = readu8chain(V8.RawHullsSize);
+		V8.CLERSbuffer = readu8chain(V8.CLERSbufferSize);
+
+		V8.Vertices = {};
+		for i = 1, V8.TotalVerts do
+			table.insert(V8.Vertices, readVector3());
+		end
+	end
+
+	return V8
+end
+
+
+local Edgebreaker = require(script.Edgebreaker);
+
+local function ParseRawHullData(hullData: buffer)
+	local size = buffer.len(hullData)
+	if size == 0 then return {} end
+
+	local offset = 0
+
+	local function readu32()
+		local int = buffer.readu32(hullData, offset)
+		offset += 4
+		return int
+	end
+
+	local function readf32()
+		local f = buffer.readf32(hullData, offset)
+		offset += 4
+		return f
+	end
+
+	local function remaining()
+		return size - offset
+	end
+
+	local hullRangeCount = readu32()
+	local hullRanges = table.create(hullRangeCount)
+	for i = 1, hullRangeCount do
+		hullRanges[i] = readu32()
+	end
+
+	local indexCount = hullRanges[hullRangeCount] or 0
+	local indexBase = table.create(indexCount)
+	for i = 1, indexCount do
+		indexBase[i] = readu32()
+	end
+
+	do
+		local used = size - remaining()
+		local pad = used % 4
+		if pad ~= 0 and remaining() >= 4 - pad then
+			offset += 4 - pad
+		end
+	end
+
+	local vertexRanges = {}
+	local componentData = {}
+
+	if remaining() > 0 then
+		local vertexRangeCount = readu32()
+		vertexRanges = table.create(vertexRangeCount)
+		for i = 1, vertexRangeCount do
+			vertexRanges[i] = readu32()
+		end
+
+		local componentCount = vertexRanges[vertexRangeCount] or 0
+		if componentCount > 0 then
+			componentData = table.create(componentCount)
+			for i = 1, componentCount do
+				componentData[i] = readf32()
+			end
+		end
+	end
+
+	local hulls = {}
+	local idx_start = 0
+	local comp_start = 0
+
+	local count = math.min(#hullRanges, #vertexRanges)
+
+	for i = 1, count do
+		local idx_end = hullRanges[i]
+		local comp_end = vertexRanges[i]
+
+		local verts = {}
+		for k = comp_start, comp_end - 1, 3 do
+			table.insert(verts, Vector3.new(
+				componentData[k+1],
+				componentData[k+2],
+				componentData[k+3]
+				))
+		end
+
+		local tris = {}
+		for k = idx_start, idx_end - 1, 3 do
+			table.insert(tris, {
+				indexBase[k+1] + 1,
+				indexBase[k+2] + 1,
+				indexBase[k+3] + 1
+			})
+		end
+
+		table.insert(hulls, {
+			Vertices = verts,
+			Triangles = tris,
+			IsRaw = true
+		})
+
+		idx_start = idx_end
+		comp_start = comp_end
+	end
+
+	return hulls
+end
+
+
+
+return function(collisionData)
+	if not collisionData then warn("Collision Data not found") return end;
+	local ParsedV8 = ParseV8(collisionData);
+
+	local start = tick();
+	local hulls = Edgebreaker.DecodeHulls(ParsedV8.CLERSbuffer, ParsedV8.CLERSbitCount, ParsedV8.HullCount, ParsedV8.Vertices,ParsedV8.TotalFaces)
+
+	for _, hull in hulls do
+		hull.IsRaw = false
+	end
+
+	local rawHulls = ParseRawHullData(ParsedV8.RawHulls);
+
+	for _, hull in rawHulls do
+		--if #hull.Triangles == 0 then continue end;
+		table.insert(hulls, hull);
+	end
+
+
+	if DEBUG then warn(`[MESH LAB] Edgebreaker solving time : {tick() - start}`) end;
+
+
+	return hulls
+end]]></ProtectedString>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+						<Item class="ModuleScript" referent="RBX4A2F3F5D50E3427A981E0C5684EE1349">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<Content name="LinkedSource"><null></null></Content>
+								<string name="Name">Edgebreaker</string>
+								<string name="ScriptGuid">{CCE92CCD-17F6-4601-AF68-0EC6F384ADF8}</string>
+								<ProtectedString name="Source"><![CDATA[--!optimize 2
+--!native
+
+local Edgebreaker = {};
+
+function Edgebreaker.DecodeHulls(clersData: buffer, totalBits: number, hullCount: number, allVertices: {Vector3}, totalFaces: number)
+	local hulls = {}
+	local bitPos = 0
+	local totalWords = (totalBits + 31) // 32
+
+	local globalVertOffset = 0 
+
+	local function readBit()
+		if bitPos >= totalBits then error("read too far") end
+
+		local wordIdx = bitPos // 32
+		local bitInWord = bitPos % 32
+
+		local bitsInThisWord = 32
+		if wordIdx == totalWords - 1 then
+			bitsInThisWord = totalBits % 32
+			if bitsInThisWord == 0 then bitsInThisWord = 32 end
+		end
+
+		local shift = bitsInThisWord - bitInWord - 1
+		local word = buffer.readu32(clersData, wordIdx * 4)
+		bitPos += 1
+
+		return bit32.band(bit32.rshift(word, shift), 1)
+	end
+
+	local adjacencyTable
+	local indexTable
+	local currentTriangleIndex = 0
+	local vertexCounter = 0
+
+	local function GetNextEdge(edgeIndex: number): number
+		return if (edgeIndex % 3) < 2 then 1 else -2
+	end
+
+	local function GetPrevEdge(edgeIndex: number): number
+		return if (edgeIndex % 3) > 0 then 1 else -2
+	end
+
+	local function zipBoundary(cursorEdge)
+		local currentEdge = cursorEdge
+		local safetyOuter = 0
+
+		while true do
+			if adjacencyTable[currentEdge + 1] ~= -2 then break end
+
+			safetyOuter += 1
+			if safetyOuter > 1000 then error("? zip") end
+
+			local nextEdgeOffset = GetNextEdge(currentEdge)
+			local candidateEdge = currentEdge + nextEdgeOffset
+
+			if adjacencyTable[candidateEdge + 1] >= 0 then
+				local safetyInner = 0
+				while true do
+					safetyInner += 1
+					if safetyInner > 1000 then error("? zip") end
+
+					local oppositeEdge = adjacencyTable[candidateEdge + 1]
+					local nextOfOpposite = GetNextEdge(oppositeEdge)
+					candidateEdge = oppositeEdge + nextOfOpposite
+
+					if adjacencyTable[candidateEdge + 1] < 0 then break end
+				end
+			end
+
+			if adjacencyTable[candidateEdge + 1] ~= -1 then break end
+
+			adjacencyTable[currentEdge + 1] = candidateEdge
+			adjacencyTable[candidateEdge + 1] = currentEdge
+
+			local prevOffset = GetPrevEdge(currentEdge)
+			currentEdge -= prevOffset
+
+			local previousEdge = currentEdge
+			local candidatePrevOffset = GetPrevEdge(candidateEdge)
+			local previousCandidateEdge = candidateEdge - candidatePrevOffset
+
+			indexTable[currentEdge - GetPrevEdge(currentEdge) + 1] = indexTable[previousCandidateEdge + 1]
+
+			local connectedEdge = adjacencyTable[currentEdge + 1]
+			if connectedEdge >= 0 then
+				local safetyInner = 0
+				while true do
+					safetyInner += 1
+					if safetyInner > 1000 then error("? zip") end
+					if candidateEdge == previousEdge then break end
+
+					local prevOfConnected = GetPrevEdge(connectedEdge)
+					previousEdge = connectedEdge - prevOfConnected
+
+					local prevOfPrev = GetPrevEdge(previousEdge)
+
+					indexTable[previousEdge - prevOfPrev + 1] = indexTable[previousCandidateEdge + 1]
+
+					connectedEdge = adjacencyTable[previousEdge + 1]
+					if connectedEdge < 0 then break end
+				end
+			end
+
+			if adjacencyTable[currentEdge + 1] >= 0 then
+				local safetyInner = 0
+				while true do
+					safetyInner += 1
+					if safetyInner > 1000 then error("? zip") end
+					if currentEdge == candidateEdge then break end
+
+					local nextLink = adjacencyTable[currentEdge + 1]
+					local prevOfNext = GetPrevEdge(nextLink)
+					currentEdge = nextLink - prevOfNext
+
+					if adjacencyTable[currentEdge + 1] < 0 then break end
+				end
+			end
+		end
+
+		return currentEdge
+	end
+
+	local function decodeRecursive(cursorEdge, depth)
+		if depth > 500 then error("? decode") end
+
+		local iterCount = 0
+		while true do
+			iterCount += 1
+			if iterCount > 10000 then error("? decode") end
+
+			currentTriangleIndex += 1
+			local triIdx = currentTriangleIndex
+			local triBaseEdge = 3 * triIdx
+
+			if adjacencyTable[triBaseEdge + 1] == nil then
+				adjacencyTable[triBaseEdge + 1] = -3
+				adjacencyTable[triBaseEdge + 2] = -3
+				adjacencyTable[triBaseEdge + 3] = -3
+				indexTable[triBaseEdge + 1] = 0
+				indexTable[triBaseEdge + 2] = 0
+				indexTable[triBaseEdge + 3] = 0
+			else
+				adjacencyTable[triBaseEdge + 1] = -3
+				adjacencyTable[triBaseEdge + 2] = -3
+				adjacencyTable[triBaseEdge + 3] = -3
+			end
+
+			adjacencyTable[cursorEdge + 1] = triBaseEdge
+			adjacencyTable[triBaseEdge + 1] = cursorEdge
+
+			indexTable[triBaseEdge + 1 + 1] = indexTable[cursorEdge - GetPrevEdge(cursorEdge) + 1]
+			indexTable[triBaseEdge + 2 + 1] = indexTable[cursorEdge + GetNextEdge(cursorEdge) + 1]
+
+			cursorEdge = triBaseEdge + 1
+
+			local bit = readBit()
+
+			if bit == 0 then -- C
+				vertexCounter += 1
+				indexTable[triBaseEdge + 1] = vertexCounter 
+				local nextOffset = GetNextEdge(cursorEdge)
+				adjacencyTable[cursorEdge + nextOffset + 1] = -1
+			else
+				local b2 = readBit()
+				local b3 = readBit()
+				local op = 4 + (if b2 == 1 then 2 else 0) + (if b3 == 1 then 1 else 0)
+
+				if op == 6 then -- R
+					local nextEdge = cursorEdge + GetNextEdge(cursorEdge)
+					adjacencyTable[nextEdge + 1] = -2
+					zipBoundary(nextEdge)
+				elseif op == 5 then -- L
+					adjacencyTable[cursorEdge + 1] = -2
+					cursorEdge += GetNextEdge(cursorEdge)
+				elseif op == 4 then -- S
+					if not decodeRecursive(cursorEdge, depth + 1) then return false end
+					cursorEdge += GetNextEdge(cursorEdge)
+				elseif op == 7 then -- E
+					adjacencyTable[cursorEdge + 1] = -2
+					local nextEdge = cursorEdge + GetNextEdge(cursorEdge)
+					adjacencyTable[nextEdge + 1] = -2
+					zipBoundary(nextEdge)
+					return true
+				else
+					return false
+				end
+			end
+		end
+	end
+
+	local estCapacity = math.max((totalFaces or 0) * 3, 1024)
+
+	for h = 1, hullCount do
+		currentTriangleIndex = 0
+		vertexCounter = 2 
+
+		adjacencyTable = table.create(estCapacity, -3)
+		indexTable = table.create(estCapacity, 0)
+
+		indexTable[1] = 0; indexTable[2] = 1; indexTable[3] = 2
+		adjacencyTable[1] = -1; adjacencyTable[3] = -1
+
+		local success = decodeRecursive(1, 0)
+
+		if success then
+			local hullVerts = {}
+			local hullTriangles = {}
+			local maxLocalIdx = 0
+
+			for t = 0, currentTriangleIndex do
+				local base = 3 * t
+				local i0 = indexTable[base + 1]
+				local i1 = indexTable[base + 2]
+				local i2 = indexTable[base + 3]
+
+				if i0 ~= i1 and i0 ~= i2 and i1 ~= i2 then
+					table.insert(hullTriangles, {i0 + 1, i1 + 1, i2 + 1})
+					maxLocalIdx = math.max(maxLocalIdx, i0, i1, i2)
+				end
+			end
+
+			local vertsConsumed = maxLocalIdx + 1
+			for v = 1, vertsConsumed do
+				table.insert(hullVerts, allVertices[globalVertOffset + v])
+			end
+
+			table.insert(hulls, {
+				Vertices = hullVerts,
+				Triangles = hullTriangles
+			})
+
+			globalVertOffset += vertsConsumed
+		else
+			warn(`Hull {h} failed to decode`)
+			break
+		end
+	end
+
+	return hulls
+end
+
+return Edgebreaker]]></ProtectedString>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="ModuleScript" referent="RBXA456CCF337274A3B804C4719D84E0A20">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<Content name="LinkedSource"><null></null></Content>
+							<string name="Name">CSGPHS7</string>
+							<string name="ScriptGuid">{FA1112EE-BDA3-47EE-AA78-E8CED1B448F2}</string>
+							<ProtectedString name="Source"><![CDATA[local DEBUG = false;
+
+type PhysicsData = {
+	Volume: number,
+	GravityCenter: Vector3,
+	
+	Im_XX: number, 
+	Im_XY: number,
+	Im_XZ: number,
+	Im_YY: number,
+	Im_YZ: number,
+	Im_ZZ: number,
+}
+
+
+type Triangle = {
+	Idx1: number,
+	Idx2: number,
+	Idx3: number
+}
+
+type Mesh = {
+	TRASH_BYTES: nil, -- 40 bytes of nothing
+	
+	VertCount: number,
+	VertWidth: number,
+	
+	Vertices: {Vector3},
+	
+	FacesCount: number,
+	Triangles: {Triangle}
+	
+}
+
+type CSGPHS7 = {
+	GeomType: number,
+	
+	PhysData: PhysicsData,
+	
+	Meshes: {Mesh}
+}
+
+return function (collisionBuffer: buffer, mesh: MeshPart)
+	local offset = 0;
+	local bufferLen = buffer.len(collisionBuffer);
+	
+	local function readu8()
+		local u8 = buffer.readu8(collisionBuffer, offset)
+		offset += 1;
+		return u8;
+	end
+
+	local function readu32()
+		local int = buffer.readu32(collisionBuffer, offset);
+		offset += 4;
+		return int
+	end
+
+	local function readf32()
+		local float = buffer.readf32(collisionBuffer, offset)
+		offset += 4;
+		return float;
+	end
+	
+	local function readstr(n)
+		local str = buffer.readstring(collisionBuffer, offset, n);
+		offset += n;
+		return str;
+	end
+
+	local function readVector3()
+		return vector.create(readf32(), readf32(), readf32())
+	end
+
+	local function readPhysicsData() : PhysicsData
+		local volume = readf32()
+		local gravityCenter = readVector3()
+		local im_xx, im_xy, im_xz, im_yy, im_yz, im_zz = readf32(), readf32(), readf32(), readf32(), readf32(), readf32();
+
+		if DEBUG then
+			print(`\n-=====[ PHYSICS DATA ]=====-\nVolume: {volume}\nCenter of gravity: {gravityCenter}\n-==========================-\n`)
+		end
+
+		return {
+			Volume = volume,
+			GravityCenter = gravityCenter,
+			
+			Im_XX = im_xx, 
+			Im_XY = im_xy, 
+			Im_XZ = im_xz, 
+			Im_YY = im_yy, 
+			Im_YZ = im_yz, 
+			Im_ZZ = im_zz
+		}
+	end
+
+	local totalFaceCount = 0
+
+	local function readMesh() : Mesh
+		offset += 40 -- trash bytes
+		local vertexAmount = readu32() / 3;
+		local vertices = {};
+
+		local vertWidth = readu32();
+
+		for i = 1, vertexAmount do
+			table.insert(vertices, readVector3())
+		end
+
+		local faceCount = readu32() / 3;
+		local faces = {}
+
+		for i = 1, faceCount do
+			table.insert(faces, {readu32() + 1, readu32() + 1, readu32() + 1})
+		end
+
+		totalFaceCount += faceCount;
+
+		return {
+			VertCount = vertexAmount,
+			VertWidth = vertWidth,
+			Vertices = vertices,
+			
+			FacesCount = faceCount,
+			Triangles = faces
+		};
+	end
+	
+
+	assert(readstr(6) == "CSGPHS")
+	assert(readu32() == 7)
+	
+	local V7: CSGPHS7 = {} do
+		V7.GeomType = readu8();
+		
+		V7.PhysData = readPhysicsData();
+		
+		V7.Meshes = {};
+		
+		while offset + 1 < bufferLen do
+			table.insert(V7.Meshes, readMesh())
+		end
+		
+	end
+
+	if DEBUG then
+		print(`\n-=====[ COLLISION DATA ]=====-\nHulls: {#V7.Meshes}\nTriangles: {totalFaceCount}\n-============================-\n`)
+	end
+
+	return V7.Meshes;
+end
+]]></ProtectedString>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="ModuleScript" referent="RBX0DA5AC2CA1094F90992C3F1EDDE21E93">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">SaveHulls</string>
+						<string name="ScriptGuid">{CD7C1F58-5279-4A8D-9017-4B491E8E297D}</string>
+						<ProtectedString name="Source"><![CDATA[local SerializationService = game:GetService("SerializationService");
+local Selection = game:GetService("Selection");
+local EncodingService = game:GetService("EncodingService")
+
+local module = {
+	Icon = "rbxassetid://120643548451843",
+	Name = "Save Collision Geometry",
+	LayoutOrder = 3,
+	Category = "Collision"
+}
+
+local modules = script.Parent.Parent.Modules;
+
+local rbxmParse = require(modules.rbxmParse);
+local CollisionData = require(modules.CollisionData);
+local PartsToMesh = require(modules.PartsToMesh)
+local CSGPHS8 = require(script.CSGPHS8)
+
+
+local function convertParent(obj: MeshPart | UnionOperation, inst: Instance)
+	if inst.Parent == obj then
+		return 'Parent'
+	else
+		return inst.Parent;
+	end
+end
+
+local function preserveJoints(obj: MeshPart | UnionOperation)
+	local originalData = {} :: {[JointInstance]: {}};
+	local preservedHierarchy = {};
+
+	for _, v in obj:GetChildren() do
+		table.insert(preservedHierarchy, {v, convertParent(obj, v)});
+	end
+
+	for _, joint: Constraint | JointInstance in obj:GetJoints() do --Prevent the joints from the parent being broken/breaking
+		if joint:IsA('JointInstance') or joint:IsA('WeldConstraint') then
+			local foundPart = joint.Part0 == obj and 'Part0' or 'Part1';
+
+			originalData[joint] = {
+				['Original'] = foundPart	
+			}
+		end
+	end
+
+	for _, v in preservedHierarchy do
+		v[1].Parent = nil;
+	end
+
+	return preservedHierarchy, originalData;
+end
+
+local function loadHierarchy(newObj: Instance, preservedHierarchy: {{any}}, jointData: {[JointInstance]: {['Original']: 'Part0' | 'Part1'}})
+	for _,v in preservedHierarchy do
+		v[1].Parent = v[2] == 'Parent' and newObj or v[2];
+	end
+
+	for joint, v in jointData do
+		joint[v.Original] = newObj;
+	end
+end
+
+local function bufhex(buf)
+	local len = buffer.len(buf)
+	local parts = table.create(len)
+	for i = 0, len - 1 do
+		table.insert(parts, string.format("%02X", buffer.readu8(buf, i)))
+	end
+	return table.concat(parts, " ")
+end
+
+local function getuncomp(data)
+	if buffer.len(data) < 16 then return data end
+
+	local magic = buffer.readu32(data, 12)
+	if magic == 0xFD2FB528 then
+		local fileHeader = buffer.create(12)
+		buffer.copy(fileHeader, 0, data, 0, 12)
+
+		local compSize = buffer.len(data) - 12
+		local compBuf = buffer.create(compSize)
+		buffer.copy(compBuf, 0, data, 12, compSize)
+
+		local decompressed = EncodingService:DecompressBuffer(compBuf, Enum.CompressionAlgorithm.Zstd)
+
+		local full = buffer.create(12 + buffer.len(decompressed))
+		buffer.copy(full, 0, fileHeader, 0, 12)
+		buffer.copy(full, 12, decompressed, 0, buffer.len(decompressed))
+		return full
+	end
+
+	return data
+end
+
+local function safeDivVector3(num: Vector3, den: Vector3)
+	return Vector3.new(
+		if math.abs(den.X) > 1e-6 then num.X / den.X else 0,
+		if math.abs(den.Y) > 1e-6 then num.Y / den.Y else 0,
+		if math.abs(den.Z) > 1e-6 then num.Z / den.Z else 0
+	)
+end
+
+
+function module:Run()
+	local obj: MeshPart | UnionOperation = game:GetService("Selection"):Get()[1]
+	if not obj then 
+		warn("No object selected")
+		return 
+	end
+
+	local decomposedMesh: Model = 	obj:FindFirstChild("DecomposedMesh") or -- SELECTING ROOT MESH
+		(obj.Name == "DecomposedMesh" and obj) or  -- SELECTING DECOMPOSED MESH 
+		(obj.Parent.Name == "DecomposedMesh" and obj.Parent) -- SELECTING MESH DIRECTLY
+
+	if not decomposedMesh then 
+		warn("No DecomposedMesh found")
+		return 
+	end
+
+	obj = decomposedMesh.Parent;
+	local meshCFrame = obj.CFrame
+	local targetMeshSize = obj.Size
+	local targetImportSize = obj.MeshSize
+	local hulls = {}
+
+	-- Convert decomposed children to collision data format
+	for _, child in decomposedMesh:GetDescendants() do
+		local vertices, triangles = {}, {}
+		local isRaw = child:GetAttribute("IsRaw")
+		local isValidHull = false
+
+		if child:IsA("Folder") then
+			if child:GetAttribute("ZeroFaces") or isRaw then
+				isValidHull = true
+				if isRaw == nil then isRaw = true end
+				-- Empty geometry
+			end
+
+		elseif child:IsA("MeshPart") then
+			isValidHull = true
+			local remap = {}
+			local hullEditableMesh: EditableMesh = child.MeshContent.Object
+			local meshSize = child:GetAttribute("OriginalSize") or hullEditableMesh:GetSize()
+
+			local scale = safeDivVector3(child.Size, meshSize)
+
+			local hullCFrame = child.CFrame
+
+			for idx, vertexId in hullEditableMesh:GetVertices() do
+				remap[vertexId] = idx
+				local vertPosition = meshCFrame:PointToObjectSpace(
+					hullCFrame:PointToWorldSpace(hullEditableMesh:GetPosition(vertexId) * scale)
+				)
+
+				local norm = safeDivVector3(vertPosition, targetMeshSize)
+				local collisionSpaceVert = norm * targetImportSize
+
+				table.insert(vertices, {collisionSpaceVert.X, collisionSpaceVert.Y, collisionSpaceVert.Z})
+			end
+
+			for _, faceId in hullEditableMesh:GetFaces() do
+				local faceVertices = hullEditableMesh:GetFaceVertices(faceId)
+				table.insert(triangles, {remap[faceVertices[1]] - 1, remap[faceVertices[2]] - 1, remap[faceVertices[3]] - 1})
+			end
+
+		elseif child:IsA("BasePart") then
+			isValidHull = true
+			local rawVerts, rawTris = PartsToMesh:GetPartGeometry(child)
+			local hullCFrame = child.CFrame
+
+			for id, vert in rawVerts do
+				local vertPosition = meshCFrame:PointToObjectSpace(hullCFrame:PointToWorldSpace(vert))
+				local norm = safeDivVector3(vertPosition, targetMeshSize)
+				local collisionSpaceVert = norm * targetImportSize
+				vertices[id] = {collisionSpaceVert.X, collisionSpaceVert.Y, collisionSpaceVert.Z}
+			end
+
+			for _, tri in rawTris do
+				table.insert(triangles, {tri[1] - 1, tri[2] - 1, tri[3] - 1})
+			end
+		end
+
+		if isValidHull then
+			table.insert(hulls, {
+				Vertices = vertices, 
+				Triangles = triangles,
+				IsRaw = isRaw
+			})
+		end
+	end
+
+	decomposedMesh:Destroy()
+
+	-- Get original collision data
+	local preserved, jointData = preserveJoints(obj);
+	local rbxmBuffer = SerializationService:SerializeInstancesAsync({obj});
+	local sstrChunk = rbxmParse.GetSSTR(rbxmBuffer, obj);
+	local sharedStrings = sstrChunk.SharedStrings;
+
+	local collisionIndex = nil
+	for i, s in sharedStrings do
+		if s.str:sub(1,6) ~= "CSGPHS" then continue; end
+		collisionIndex = i;
+		break;
+	end
+
+	if not collisionIndex then
+		warn("Collision data not found in shared strings")
+		return
+	end
+
+	local collisionBuffer = buffer.fromstring(sharedStrings[collisionIndex].str)
+	local uncompressedOriginal = getuncomp(collisionBuffer)
+	--print(`ORIGINAL UNCOMPRESSED ({buffer.len(uncompressedOriginal)}b):`)
+	--print(bufhex(uncompressedOriginal))
+
+	-- Decode original collision data to get physics data and collision type
+	local originalHulls, originalPhysics, collisionType = CollisionData:Decode(collisionBuffer, obj);
+
+	-- Re-encode with new hull data
+	local newCollisionBuffer, debugBuffer = CSGPHS8.Encode(hulls);
+
+	--print(`NEW UNCOMPRESSED ({buffer.len(debugBuffer)}b):`)
+	--print(bufhex(debugBuffer))
+
+	-- Update shared string with new collision data
+	sharedStrings[collisionIndex].str = buffer.tostring(newCollisionBuffer);
+
+	-- Save and deserialize
+	local newRbxmBuffer = rbxmParse.SaveSSTR(rbxmBuffer, sstrChunk)
+	local deserializedObjects = SerializationService:DeserializeInstancesAsync(newRbxmBuffer)
+
+	--print("COLLISION DATA EQUAL?", buffer.tostring(debugBuffer)==buffer.tostring(uncompressedOriginal))
+	--print("COMPRESSED DATA EQUAL?", buffer.tostring(newCollisionBuffer)==buffer.tostring(collisionBuffer))
+	
+	--workspace.WriteData.BinDiffOut.Source = `ORIGINAL:\n{bufhex(uncompressedOriginal)}\n\nNEW:\n{bufhex(debugBuffer)}\n`
+	
+	warn("[MESH LAB] Successfully processed collision data!")
+
+	if deserializedObjects and #deserializedObjects > 0 then
+		deserializedObjects[1].Parent = obj.Parent;
+		deserializedObjects[1].CFrame = obj.CFrame;
+
+		loadHierarchy(deserializedObjects[1], preserved, jointData);
+		Selection:Set({deserializedObjects[1]});
+		obj:Destroy();
+	end
+end
+
+return module]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="ModuleScript" referent="RBXD5B2D5CC6B164052B39D352999755BB3">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<Content name="LinkedSource"><null></null></Content>
+							<string name="Name">CSGPHS8</string>
+							<string name="ScriptGuid">{DB15603B-DCF2-4C82-A819-08588D1B8BFE}</string>
+							<ProtectedString name="Source"><![CDATA[--[[ WRITTEN BY CLV ]]
+
+local EncodingService = game:GetService("EncodingService")
+
+local function createBitStream()
+	return { bits = {} }
+end
+
+local function bitStreamWriteBit(stream, bit)
+	table.insert(stream.bits, if bit == 1 or bit == true then 1 else 0)
+end
+
+local function bitStreamWriteBits(stream, val, count)
+	for i = count - 1, 0, -1 do
+		bitStreamWriteBit(stream, bit32.band(bit32.rshift(val, i), 1))
+	end
+end
+
+local function bitStreamPack(stream)
+	local words = {}
+	local bit_idx = 1
+	local total_bits = #stream.bits
+
+	while bit_idx <= total_bits do
+		local remaining = total_bits - bit_idx + 1
+		local val = 0
+		local width = 0
+
+		if remaining >= 32 then
+			width = 32
+			for i = 0, 31 do
+				local b = stream.bits[bit_idx + i]
+				val = bit32.bor(val, bit32.lshift(b, 31 - i))
+			end
+			bit_idx += 32
+		else
+			width = remaining
+			for i = 0, width - 1 do
+				local b = stream.bits[bit_idx + i]
+				val = bit32.bor(val, bit32.lshift(b, width - 1 - i))
+			end
+			bit_idx += width
+		end
+		table.insert(words, val)
+	end
+
+	local buf = buffer.create(#words * 4)
+	for i, w in words do
+		buffer.writeu32(buf, (i - 1) * 4, w)
+	end
+
+	return buf, total_bits
+end
+
+local function encodeRawHulls(hulls)
+	if #hulls == 0 then return buffer.create(0), 0 end
+
+	local hull_ranges = {}
+	local index_base = {}
+	local vertex_ranges = {}
+	local component_data = {}
+
+	local idx_cursor = 0
+	local comp_cursor = 0
+
+	for i, h in hulls do
+		local flat_indices = {}
+		for _, tri in h.Triangles do
+			table.insert(flat_indices, tri[1])
+			table.insert(flat_indices, tri[2])
+			table.insert(flat_indices, tri[3])
+		end
+
+		for _, idx in flat_indices do table.insert(index_base, idx) end
+		idx_cursor += #flat_indices
+		table.insert(hull_ranges, idx_cursor)
+
+		local flat_verts = {}
+		for _, v in h.Vertices do
+			table.insert(flat_verts, v[1])
+			table.insert(flat_verts, v[2])
+			table.insert(flat_verts, v[3])
+		end
+
+		for _, comp in flat_verts do table.insert(component_data, comp) end
+		comp_cursor += #flat_verts
+		table.insert(vertex_ranges, comp_cursor)
+	end
+
+	local function to_u32_buf(t)
+		local b = buffer.create(#t * 4)
+		for i, v in t do buffer.writeu32(b, (i-1)*4, v) end
+		return b
+	end
+
+	local parts = {}
+
+	local b_c1 = buffer.create(4); buffer.writeu32(b_c1, 0, #hull_ranges)
+	table.insert(parts, b_c1)
+	table.insert(parts, to_u32_buf(hull_ranges))
+
+	if #index_base > 0 then
+		table.insert(parts, to_u32_buf(index_base))
+	end
+
+	local current_len = 0
+	for _, p in parts do current_len += buffer.len(p) end
+	local pad = current_len % 4
+	if pad ~= 0 then
+		table.insert(parts, buffer.create(4 - pad))
+	end
+
+	local b_c2 = buffer.create(4); buffer.writeu32(b_c2, 0, #vertex_ranges)
+	table.insert(parts, b_c2)
+	table.insert(parts, to_u32_buf(vertex_ranges))
+
+	if #component_data > 0 then
+		local b_comp = buffer.create(#component_data * 4)
+		for i, v in component_data do buffer.writef32(b_comp, (i-1)*4, v) end
+		table.insert(parts, b_comp)
+	end
+
+	local total_size = 0
+	for _, p in parts do total_size += buffer.len(p) end
+
+	local final = buffer.create(total_size)
+	local offset = 0
+	for _, p in parts do
+		buffer.copy(final, offset, p, 0, buffer.len(p))
+		offset += buffer.len(p)
+	end
+
+	return final, total_size
+end
+
+local function encodeSingleHull(hull, bs, global_verts_out)
+	local faces = hull.Triangles
+	local original_verts = hull.Vertices
+	if #faces == 0 then return end
+
+	local v_map = {} 
+	local ordered_verts = {} 
+
+	local function map_vert(orig_idx)
+		if v_map[orig_idx] == nil then
+			v_map[orig_idx] = #ordered_verts 
+			table.insert(ordered_verts, original_verts[orig_idx + 1]) 
+		end
+		return v_map[orig_idx]
+	end
+
+	local f0_idx = 1
+	local f0 = nil
+	for i, tri in faces do
+		if tri[1] ~= tri[2] and tri[1] ~= tri[3] and tri[2] ~= tri[3] then
+			f0 = tri
+			f0_idx = i
+			break
+		end
+	end
+
+	if not f0 then return end
+
+	map_vert(f0[1]); map_vert(f0[2]); map_vert(f0[3])
+
+	local adj = {}
+	local function add_adj(u, v, f_idx)
+		local key = u .. "_" .. v
+		if not adj[key] then adj[key] = {} end
+		table.insert(adj[key], f_idx)
+	end
+
+	for i, tri in faces do
+		local f_idx = i - 1 
+		add_adj(tri[1], tri[2], f_idx)
+		add_adj(tri[2], tri[3], f_idx)
+		add_adj(tri[3], tri[1], f_idx)
+	end
+
+	local visited_faces = {[f0_idx - 1] = true}
+
+	local function makeNode(val) return {val = val, prev = nil, next = nil} end
+
+	local n0, n1, n2 = makeNode(0), makeNode(1), makeNode(2)
+	n0.next = n1; n0.prev = n2
+	n1.next = n2; n1.prev = n0
+	n2.next = n0; n2.prev = n1
+
+	local boundary_map = {[0] = n0, [1] = n1, [2] = n2}
+
+	local dec_to_orig = {}
+	for k, v in v_map do dec_to_orig[v] = k end
+
+	local function get_neighbor_face(u_d, v_d)
+		local u_o, v_o = dec_to_orig[u_d], dec_to_orig[v_d]
+		if u_o == nil or v_o == nil then return nil end
+
+		local key = v_o .. "_" .. u_o 
+		local candidates = adj[key]
+		if not candidates then return nil end
+
+		for _, f_idx in candidates do
+			if not visited_faces[f_idx] then return f_idx end
+		end
+		return nil
+	end
+
+	local function get_third_vert(f_idx, u_d, v_d)
+		local u_o, v_o = dec_to_orig[u_d], dec_to_orig[v_d]
+		local tri = faces[f_idx + 1] 
+		for _, x in tri do
+			if x ~= u_o and x ~= v_o then return x end
+		end
+		return nil
+	end
+
+	local recursive_encode
+	recursive_encode = function(u_node, v_node)
+		while true do
+			local u_dec, v_dec = u_node.val, v_node.val
+			local f_next = get_neighbor_face(u_dec, v_dec)
+
+			if f_next == nil then
+				bitStreamWriteBits(bs, 7, 3) 
+				return
+			end
+
+			local w_orig = get_third_vert(f_next, u_dec, v_dec)
+
+			if w_orig == nil then
+				bitStreamWriteBits(bs, 7, 3)
+				return
+			end
+
+			visited_faces[f_next] = true
+
+			if v_map[w_orig] == nil then 
+				bitStreamWriteBit(bs, 0)
+
+				local w_dec = #ordered_verts
+				v_map[w_orig] = w_dec
+				dec_to_orig[w_dec] = w_orig
+				table.insert(ordered_verts, original_verts[w_orig + 1])
+
+				local w_node = makeNode(w_dec)
+				w_node.prev = u_node
+				w_node.next = v_node
+
+				u_node.next = w_node
+				v_node.prev = w_node
+				boundary_map[w_dec] = w_node
+
+				v_node = w_node
+			else
+				local w_dec = v_map[w_orig]
+
+				if boundary_map[w_dec] == nil then
+					bitStreamWriteBits(bs, 7, 3) 
+					return
+				end
+
+				local w_node = boundary_map[w_dec]
+
+				if w_node == v_node.next and w_node == u_node.prev then
+					bitStreamWriteBits(bs, 7, 3) 
+					boundary_map[u_dec] = nil; boundary_map[v_dec] = nil; boundary_map[w_dec] = nil
+					return
+				elseif w_node == v_node.next then 
+					bitStreamWriteBits(bs, 6, 3)
+					u_node.next = w_node
+					w_node.prev = u_node
+					boundary_map[v_dec] = nil
+					v_node = w_node
+				elseif w_node == u_node.prev then 
+					bitStreamWriteBits(bs, 5, 3)
+					w_node.next = v_node
+					v_node.prev = w_node
+					boundary_map[u_dec] = nil
+					u_node = w_node
+				else 
+					local f_right = get_neighbor_face(u_dec, w_dec)
+					local f_left = get_neighbor_face(w_dec, v_dec)
+					local right_closed = (f_right == nil)
+					local left_closed = (f_left == nil)
+
+					if right_closed then 
+						bitStreamWriteBits(bs, 5, 3)
+						w_node.next = v_node
+						v_node.prev = w_node
+						boundary_map[u_dec] = nil
+						u_node = w_node
+					elseif left_closed then 
+						bitStreamWriteBits(bs, 6, 3)
+						u_node.next = w_node
+						w_node.prev = u_node
+						boundary_map[v_dec] = nil
+						v_node = w_node
+					else
+						bitStreamWriteBits(bs, 4, 3)
+
+						local w_node_right = makeNode(w_dec)
+						w_node_right.next = w_node.next
+						w_node_right.next.prev = w_node_right
+						w_node_right.prev = u_node
+
+						u_node.next = w_node_right
+
+						w_node.next = v_node
+						v_node.prev = w_node
+
+						local old_w_node_map = boundary_map[w_dec]
+						boundary_map[w_dec] = w_node_right
+
+						recursive_encode(u_node, w_node_right)
+
+						boundary_map[w_dec] = old_w_node_map
+						u_node = w_node
+					end
+				end
+			end
+		end
+	end
+
+	recursive_encode(n2, n0)
+
+	for _, v in ordered_verts do table.insert(global_verts_out, v) end
+end
+
+local function encodeClersHulls(hulls)
+	local bs = createBitStream()
+	local all_verts = {}
+
+	for _, h in hulls do
+		encodeSingleHull(h, bs, all_verts)
+	end
+
+	local vert_bytes = buffer.create(#all_verts * 12)
+	for i, v in all_verts do
+		local off = (i-1) * 12
+		buffer.writef32(vert_bytes, off, v[1])
+		buffer.writef32(vert_bytes, off + 4, v[2])
+		buffer.writef32(vert_bytes, off + 8, v[3])
+	end
+
+	local bits_buf, bit_count = bitStreamPack(bs)
+	return bits_buf, bit_count, vert_bytes
+end
+
+local CSGPHS8 = {}
+
+function CSGPHS8.Encode(hulls)
+	local raw_hulls = {}
+	local clers_hulls = {}
+
+	for _, hull in hulls do
+		local isRaw = hull.IsRaw
+
+		if isRaw then
+			table.insert(raw_hulls, hull)
+		else
+			table.insert(clers_hulls, hull)
+		end
+	end
+	
+	--print(`encoding {#raw_hulls} raw and {#clers_hulls} clers`)
+	local d1_buf, d1_size = encodeRawHulls(raw_hulls)
+	local d3_buf, d2_bit_count, d4_buf = encodeClersHulls(clers_hulls)
+	local d3_size = buffer.len(d3_buf)
+	local d4_size = buffer.len(d4_buf)
+
+	local total_verts = 0
+	local total_faces = 0
+
+	for _, h in clers_hulls do 
+		total_verts += #h.Vertices 
+		total_faces += #h.Triangles
+	end
+
+	for _, h in raw_hulls do 
+		total_verts += #h.Vertices 
+	end
+
+	local fh_v, fh_f = 0, 0
+	local function scan_max(list)
+		for _, h in list do
+			if #h.Vertices > fh_v then fh_v = #h.Vertices end
+			if #h.Triangles > fh_f then fh_f = #h.Triangles end
+		end
+	end
+	scan_max(clers_hulls)
+	scan_max(raw_hulls)
+
+	local min_v = {math.huge, math.huge, math.huge}
+	local max_v = {-math.huge, -math.huge, -math.huge}
+
+	local function scan_bounds(list)
+		for _, h in list do
+			for _, v in h.Vertices do
+				for k=1,3 do
+					if v[k] < min_v[k] then min_v[k] = v[k] end
+					if v[k] > max_v[k] then max_v[k] = v[k] end
+				end
+			end
+		end
+	end
+	scan_bounds(clers_hulls)
+	scan_bounds(raw_hulls)
+
+	if total_verts == 0 then 
+		min_v = {0,0,0}; max_v = {0,0,0} 
+	end
+
+	local header = buffer.create(60) 
+	local o = 0
+	local function w32(x) buffer.writeu32(header, o, x); o+=4 end
+	local function wf(x) buffer.writef32(header, o, x); o+=4 end
+
+	w32(#clers_hulls)
+	w32(d4_size // 12)
+	w32(total_faces)
+	w32(fh_v)
+	w32(fh_f)
+	w32(d1_size)
+	w32(d2_bit_count)
+	w32(d3_size)
+	w32(d4_size)
+	wf(min_v[1]); wf(min_v[2]); wf(min_v[3])
+	wf(max_v[1]); wf(max_v[2]); wf(max_v[3])
+
+	local payload_len = 60 + d1_size + d3_size + d4_size
+	local payload = buffer.create(payload_len)
+	buffer.copy(payload, 0, header, 0, 60)
+
+	local c = 60
+	if d1_size > 0 then buffer.copy(payload, c, d1_buf, 0, d1_size); c += d1_size end
+	if d3_size > 0 then buffer.copy(payload, c, d3_buf, 0, d3_size); c += d3_size end
+	if d4_size > 0 then buffer.copy(payload, c, d4_buf, 0, d4_size); c += d4_size end
+
+	local geomType = 3
+
+	local debug_file = buffer.create(12 + payload_len)
+	buffer.writestring(debug_file, 0, "CSGPHS")
+	buffer.writeu32(debug_file, 6, 8) 
+	buffer.writeu8(debug_file, 10, geomType)
+	buffer.writeu8(debug_file, 11, 0)
+	buffer.copy(debug_file, 12, payload, 0, payload_len)
+
+	local compressed = EncodingService:CompressBuffer(payload, Enum.CompressionAlgorithm.Zstd)
+
+	local final_file = buffer.create(12 + buffer.len(compressed))
+	buffer.writestring(final_file, 0, "CSGPHS")
+	buffer.writeu32(final_file, 6, 8) 
+	buffer.writeu8(final_file, 10, geomType)
+	buffer.writeu8(final_file, 11, 0)
+	buffer.copy(final_file, 12, compressed, 0, buffer.len(compressed))
+
+	return final_file, debug_file
+end
+
+return CSGPHS8]]></ProtectedString>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="ModuleScript" referent="RBX4C7F3F4FB1054505B506866E8AF68E54">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">OptimizeFidelity</string>
+						<string name="ScriptGuid">{5366F7BF-4E6A-4937-8D3E-0CFDADF2E774}</string>
+						<ProtectedString name="Source"><![CDATA[--!native
+local SerializationService = game:GetService("SerializationService");
+
+local module = {
+	Icon = "rbxassetid://81480871483945",
+	Name = "Pick most optimized fidelity for selected Meshes",
+	LayoutOrder = 4,
+	Category = "Collision"
+}
+local modules = script.Parent.Parent.Modules;
+
+local rbxmParse = require(modules.rbxmParse);
+
+local function getPerformantFidelity(original: MeshPart | UnionOperation): Enum.CollisionFidelity?
+	local defaultMesh = Instance.fromExisting(original);
+	
+	
+	local oppositeMesh = Instance.fromExisting(defaultMesh);
+	local oppositeCollision = oppositeMesh.CollisionFidelity == Enum.CollisionFidelity.Default and Enum.CollisionFidelity.PreciseConvexDecomposition or Enum.CollisionFidelity.Default;
+	oppositeMesh.Parent = workspace;
+	oppositeMesh.CollisionFidelity = oppositeCollision;
+
+	local defaultBuf = SerializationService:SerializeInstancesAsync({defaultMesh});
+	local preciseBuf = SerializationService:SerializeInstancesAsync({oppositeMesh});
+
+	oppositeMesh:Destroy();
+
+	local defaultsstrChunk = rbxmParse.GetSSTR(defaultBuf, defaultMesh);
+
+	local precisesstrChunk = rbxmParse.GetSSTR(preciseBuf, oppositeMesh);
+
+	local currentCollisionData;
+	local oppositeCollisionData;
+
+	for i, s in defaultsstrChunk.SharedStrings do
+		if s.str:sub(1,6) ~= "CSGPHS" then continue; end
+		currentCollisionData = s.str;
+		break;
+	end
+	if not currentCollisionData then return; end --Idk how this happen but disaster
+
+	for i, s in precisesstrChunk.SharedStrings do
+		if s.str:sub(1,6) ~= "CSGPHS" then continue; end
+		oppositeCollisionData = s.str;
+		break;
+	end
+
+	if not oppositeCollisionData then return; end
+	local mostPerformant = #oppositeCollisionData <= #currentCollisionData and oppositeCollision or defaultMesh.CollisionFidelity;
+	return mostPerformant;
+end
+
+function module:Run()
+	local validMeshes = {} :: {[string]: {MeshPart}};
+	local validUnions = {} :: {UnionOperation};
+	local meshCount = 0;
+	
+	for _, inst in game:GetService("Selection"):Get() do
+
+		--if not inst.CanCollide then
+		--	inst.CollisionFidelity = Enum.CollisionFidelity.Box;
+		--	warn(inst, '[MESH LAB] Was CanCollide false box is most performant!');
+
+		--	continue;
+		--end
+		if inst:IsA('MeshPart') then
+			if not validMeshes[inst.MeshId] then
+				validMeshes[inst.MeshId] = {};
+				meshCount+=1;
+			end
+
+			table.insert(validMeshes[inst.MeshId], inst);
+		elseif inst:IsA('UnionOperation') then
+			table.insert(validUnions, inst);
+		end
+	end
+	
+	if meshCount == 0 and #validUnions == 0 then
+		warn(`[MESH LAB] No Meshes or Unions were selected!`);
+		return;
+	end
+	
+	if meshCount ~= 0 then
+		warn(`[MESH LAB] Checking {meshCount} different meshes!`);
+	end
+	if #validUnions ~= 0 then
+		warn(`[MESH LAB] Checking {#validUnions} different unions!`);
+	end
+	
+	local start = os.clock();
+	
+	--TODO: To speed this process up we should only calculate it for 1 mesh, and clone the result to all the selected meshes with the same ID
+	--This would be best for performance sake, but it would require preserving the hierarchy, see "SaveHulls"
+	for meshId, meshes in validMeshes do 
+		local mostPerformant = getPerformantFidelity(meshes[1]);
+		if not mostPerformant then continue; end
+		
+		warn(meshes[1], `[MESH LAB] {meshes[1].MeshId} is most performant using {mostPerformant.Name}`)
+		for _,v in meshes do
+			v.CollisionFidelity = Enum.CollisionFidelity.Box; -- forces the update
+			v.CollisionFidelity = mostPerformant;
+		end
+	end
+	
+	for _, union in validUnions do
+		local mostPerformant = getPerformantFidelity(union);
+		if not mostPerformant then continue; end
+		
+		warn(union, `[MESH LAB] {union.Name} is most performant using {mostPerformant.Name}`)
+		union.CollisionFidelity = Enum.CollisionFidelity.Box; -- forces the update
+		union.CollisionFidelity = mostPerformant;
+	end
+end
+
+
+return module
+]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBX7CF7CED2D7334E3EA7F6B76BF4EF4441">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">ConvexHull</string>
+						<string name="ScriptGuid">{4ED84774-30B8-45A9-82FF-36FE49F40629}</string>
+						<ProtectedString name="Source"><![CDATA[--!strict
+--!native
+--!optimize 2
+
+local SerializationService = game:GetService("SerializationService")
+local AssetService = game:GetService("AssetService")
+local Selection = game:GetService("Selection")
+local Workspace = game:GetService("Workspace")
+
+local EPS = 1e-6
+
+local DEBUG = false;
+
+type Vertex = Vector3
+
+local module = {
+	Icon = "rbxassetid://75490846570565",
+	Name = "Convex Hull from selected Meshes",
+	LayoutOrder = 7,
+	Category = "Mesh"
+}
+
+local function dot(a: Vector3, b: Vector3): number
+	return a:Dot(b)
+end
+
+local function cross(a: Vector3, b: Vector3): Vector3
+	return a:Cross(b)
+end
+
+function module:Run()
+	
+	local function computeNormal(a: Vector3, b: Vector3, c: Vector3): Vector3
+		local n = cross(b - a, c - a)
+		
+		if n.Magnitude > 0 then
+			return n.Unit
+		else
+			return Vector3.new(0, 0, 0)
+		end
+	end
+
+	local function dedupe(points: {Vertex}, tol: number): {Vertex}
+		tol = tol or 1e-5
+		local seen = {}
+		local out = {}
+		for _, p in ipairs(points) do
+			local kx = math.floor(p.X / tol + 0.5)
+			local ky = math.floor(p.Y / tol + 0.5)
+			local kz = math.floor(p.Z / tol + 0.5)
+			local key = kx .. ":" .. ky .. ":" .. kz
+			if not seen[key] then
+				seen[key] = true
+				table.insert(out, p)
+			end
+		end
+		return out
+	end
+
+	local function makeFace(aIdx: number, bIdx: number, cIdx: number, points: {Vertex})
+		local a, b, c = points[aIdx], points[bIdx], points[cIdx]
+		local n = computeNormal(a, b, c)
+		return {
+			a = aIdx,
+			b = bIdx,
+			c = cIdx,
+			normal = n,
+			outside = {},
+			neighbors = {},
+		}
+	end
+
+	local function faceDistance(face: any, pIdx: number, points: {Vertex}): number
+		return dot(points[pIdx] - points[face.a], face.normal)
+	end
+
+	local function flipFace(face: any, points: {Vertex})
+		face.b, face.c = face.c, face.b
+		local a, b, c = points[face.a], points[face.b], points[face.c]
+		face.normal = computeNormal(a, b, c)
+	end
+
+	local function orientFaceOutward(face: any, interiorVec: Vector3, points: {Vertex})
+		if dot(interiorVec - points[face.a], face.normal) > 0 then
+			flipFace(face, points)
+		end
+	end
+
+	local function buildInitialTetra(points: {Vertex})
+		assert(#points >= 4, "Need >=4 points")
+
+		local minX_i, maxX_i = 1, 1
+		for i = 2, #points do
+			if points[i].X < points[minX_i].X then
+				minX_i = i
+			end
+			if points[i].X > points[maxX_i].X then
+				maxX_i = i
+			end
+		end
+
+		local far_i, bestArea = nil, -1
+		for i = 1, #points do
+			if i ~= minX_i and i ~= maxX_i then
+				local area = cross(points[maxX_i] - points[minX_i], points[i] - points[minX_i]).Magnitude
+				if area > bestArea then
+					bestArea = area
+					far_i = i
+				end
+			end
+		end
+		assert(far_i, "colinear?")
+
+		local planeN = cross(points[maxX_i] - points[minX_i], points[far_i] - points[minX_i])
+		local fourth_i, bestDist = nil, -1
+		for i = 1, #points do
+			if i ~= minX_i and i ~= maxX_i and i ~= far_i then
+				local d = math.abs(dot(planeN.Unit, points[i] - points[minX_i]))
+				if d > bestDist then
+					bestDist = d
+					fourth_i = i
+				end
+			end
+		end
+		assert(fourth_i, "coplanar?")
+
+		local used = {}
+		used[minX_i] = true
+		used[maxX_i] = true
+		used[far_i] = true
+		used[fourth_i] = true
+
+		local interior = (points[minX_i] + points[maxX_i] + points[far_i] + points[fourth_i]) / 4
+
+		local faces = {}
+		table.insert(faces, makeFace(minX_i, maxX_i, far_i, points))
+		table.insert(faces, makeFace(minX_i, far_i, fourth_i, points))
+		table.insert(faces, makeFace(minX_i, fourth_i, maxX_i, points))
+		table.insert(faces, makeFace(maxX_i, fourth_i, far_i, points))
+
+		for _, f in ipairs(faces) do
+			orientFaceOutward(f, interior, points)
+		end
+
+		return faces, interior, used
+	end
+
+	local function edgeKey(u: number, v: number): string
+		return tostring(u) .. "|" .. tostring(v)
+	end
+
+	local function registerFace(face: any, edgeToFace: {[string]: any})
+		for _, e in ipairs({{face.a, face.b}, {face.b, face.c}, {face.c, face.a}}) do
+			local k = edgeKey(e[1], e[2])
+			edgeToFace[k] = face
+			local oppk = edgeKey(e[2], e[1])
+			local opp = edgeToFace[oppk]
+			if opp then
+				face.neighbors[k] = opp
+				opp.neighbors[oppk] = face
+			end
+		end
+	end
+
+	local function unregisterFace(face: any, edgeToFace: {[string]: any})
+		for _, e in ipairs({{face.a, face.b}, {face.b, face.c}, {face.c, face.a}}) do
+			local k = edgeKey(e[1], e[2])
+			edgeToFace[k] = nil
+			local oppk = edgeKey(e[2], e[1])
+			local opp = edgeToFace[oppk]
+			if opp and opp.neighbors then
+				opp.neighbors[oppk] = nil
+			end
+		end
+	end
+
+	local function assignPoints(pointIndices: {number}, faces: {any}, points: {Vertex})
+		for _, f in ipairs(faces) do
+			f.outside = {}
+		end
+		for _, pIdx in ipairs(pointIndices) do
+			local bestFace, bestD = nil, EPS
+			for _, f in ipairs(faces) do
+				local d = faceDistance(f, pIdx, points)
+				if d > bestD then
+					bestD = d
+					bestFace = f
+				end
+			end
+			if bestFace then
+				table.insert(bestFace.outside, pIdx)
+			end
+		end
+	end
+
+	local function findVisibleFaces(startFace: any, eyeIdx: number, points: {Vertex})
+		local stack = {startFace}
+		local visited = {}
+		local visible = {}
+
+		while #stack > 0 do
+			local f = table.remove(stack)
+			if not visited[f] then
+				visited[f] = true
+				if faceDistance(f, eyeIdx, points) > EPS then
+					table.insert(visible, f)
+
+					for _, neighbor in pairs(f.neighbors) do
+						if neighbor and not visited[neighbor] then
+							table.insert(stack, neighbor)
+						end
+					end
+				end
+			end
+		end
+
+		local visibleSet = {}
+		for _, f in ipairs(visible) do
+			visibleSet[f] = true
+		end
+
+		return visible, visibleSet
+	end
+
+	local function buildHorizon(visibleList: {any}, visibleSet: {[any]: boolean}, edgeToFace: {[string]: any})
+		local horizon = {}
+		for _, f in ipairs(visibleList) do
+			for _, e in ipairs({{f.a, f.b}, {f.b, f.c}, {f.c, f.a}}) do
+				local oppKey = edgeKey(e[2], e[1])
+				local oppFace = edgeToFace[oppKey]
+				if not oppFace or not visibleSet[oppFace] then
+					table.insert(horizon, {e[1], e[2]})
+				end
+			end
+		end
+		return horizon
+	end
+
+	local function quickHull(points: {Vertex}): {any}
+		if #points < 4 then
+			error("Need at least 4 points")
+		end
+
+		local faces, interiorVec, usedMap = buildInitialTetra(points)
+		local edgeToFace = {}
+		for _, f in ipairs(faces) do
+			registerFace(f, edgeToFace)
+		end
+
+		local candidates = {}
+		for i = 1, #points do
+			if not usedMap[i] then
+				table.insert(candidates, i)
+			end
+		end
+
+		assignPoints(candidates, faces, points)
+
+		while true do
+			local faceWithOutside = nil
+			for _, f in ipairs(faces) do
+				if #f.outside > 0 then
+					faceWithOutside = f
+					break
+				end
+			end
+			if not faceWithOutside then
+				break
+			end
+
+			local farIdx = faceWithOutside.outside[1]
+			local maxD = faceDistance(faceWithOutside, farIdx, points)
+			for _, pIdx in ipairs(faceWithOutside.outside) do
+				local d = faceDistance(faceWithOutside, pIdx, points)
+				if d > maxD then
+					maxD = d
+					farIdx = pIdx
+				end
+			end
+
+			local visibleList, visibleSet = findVisibleFaces(faceWithOutside, farIdx, points)
+
+			local reassignMap = {}
+			local reassignList = {}
+			for _, vf in ipairs(visibleList) do
+				for _, pIdx in ipairs(vf.outside) do
+					if pIdx ~= farIdx and not reassignMap[pIdx] then
+						reassignMap[pIdx] = true
+						table.insert(reassignList, pIdx)
+					end
+				end
+			end
+
+			local horizon = buildHorizon(visibleList, visibleSet, edgeToFace)
+
+			for _, vf in ipairs(visibleList) do
+				unregisterFace(vf, edgeToFace)
+			end
+			for i = #faces, 1, -1 do
+				if visibleSet[faces[i]] then
+					table.remove(faces, i)
+				end
+			end
+
+			local newFaces = {}
+			for _, e in ipairs(horizon) do
+				local newF = makeFace(e[1], e[2], farIdx, points)
+				orientFaceOutward(newF, interiorVec, points)
+				registerFace(newF, edgeToFace)
+				table.insert(newFaces, newF)
+				table.insert(faces, newF)
+			end
+
+			if #reassignList > 0 then
+				for _, nf in ipairs(newFaces) do
+					nf.outside = {}
+				end
+
+				for _, pIdx in ipairs(reassignList) do
+					local assigned = false
+					local bestFace, bestD = nil, EPS
+					for _, nf in ipairs(newFaces) do
+						local d = faceDistance(nf, pIdx, points)
+						if d > bestD then
+							bestD = d
+							bestFace = nf
+						end
+					end
+					if bestFace then
+						table.insert(bestFace.outside, pIdx)
+						assigned = true
+					end
+				end
+			end
+
+			for _, f in ipairs(faces) do
+				for i = #f.outside, 1, -1 do
+					if f.outside[i] == farIdx then
+						table.remove(f.outside, i)
+					end
+				end
+			end
+		end
+
+		return faces
+	end
+
+	local function collectVertices(meshes: {MeshPart}): {Vertex}
+		local allVertices: {Vertex} = {}
+
+		for _, meshPart in ipairs(meshes) do
+			local mesh = meshPart.MeshContent.Object :: EditableMesh
+			local cframe = meshPart.CFrame
+
+			for _, v in mesh:GetVertices() do
+				local localPos = mesh:GetPosition(v)
+				local worldPos = cframe:PointToWorldSpace(localPos)
+
+				table.insert(allVertices, worldPos)
+			end
+		end
+
+		return allVertices
+	end
+
+	local function createEditableMeshFromHull(faces: {any}, points: {Vertex}): EditableMesh
+		local editableMesh = AssetService:CreateEditableMesh()
+
+		local vertexMap = {}
+		local function getVertexID(v: Vertex): number
+			local key = tostring(v)
+			if not vertexMap[key] then
+				vertexMap[key] = editableMesh:AddVertex(v)
+			end
+			return vertexMap[key]
+		end
+
+		for _, face in ipairs(faces) do
+			local vid0 = getVertexID(points[face.a])
+			local vid1 = getVertexID(points[face.b])
+			local vid2 = getVertexID(points[face.c])
+
+			local nid = editableMesh:AddNormal()
+			local fid = editableMesh:AddTriangle(vid0, vid1, vid2)
+
+			editableMesh:SetFaceNormals(fid, {nid, nid, nid})
+		end
+
+		editableMesh:RemoveUnused()
+
+		return editableMesh
+	end
+
+	local selectedModels = Selection:Get()
+
+	if #selectedModels == 0 then
+		warn("No models selected!")
+		return
+	end
+
+	local allVertices = collectVertices(selectedModels)
+	local dedupedVertices = dedupe(allVertices, 1e-5)
+	
+	local start = tick();
+
+	if #dedupedVertices < 4 then
+		warn("Not enough distinct points to build a hull")
+		return
+	end
+
+	local ok, hullFaces = pcall(function()
+		return quickHull(dedupedVertices)
+	end)
+
+	if not ok then
+		warn("QuickHull failed: " .. tostring(hullFaces))
+		return
+	end
+	
+	if DEBUG then warn(`[MESH LAB] Quickhull computation time : {tick() - start}`) end
+
+	local mesh = createEditableMeshFromHull(hullFaces, dedupedVertices)
+
+	local meshPart = AssetService:CreateMeshPartAsync(Content.fromObject(mesh),  {CollisionFidelity = Enum.CollisionFidelity.Box})
+
+	meshPart.Material = Enum.Material.Plastic
+	meshPart.Transparency = 0
+	meshPart.Parent = selectedModels[1].Parent
+		
+	for _, model in ipairs(selectedModels) do
+		if model:IsA("BasePart") then
+			model:Destroy()
+		end
+	end
+	
+	game:GetService("Selection"):Set({meshPart});
+end
+
+return module]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBX12E9B2C0976C4D7B987633675F926B65">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">EditVertices</string>
+						<string name="ScriptGuid">{687C78D1-04C5-4F07-AFF8-F9C1CE05B84E}</string>
+						<ProtectedString name="Source"><![CDATA[local Selection = game:GetService("Selection");
+
+local module = {
+	Icon = "rbxassetid://111557428820480",
+	Name = "Edit Mesh Vertices",
+	LayoutOrder = 5,
+	Category = "Mesh"
+}
+
+local function isConvex(editableMesh: EditableMesh)
+	local center = editableMesh:GetCenter();
+
+	local nonConvex, wrongDot;
+	local minPenetration = math.huge
+
+	for _, vertexId in editableMesh:GetVertices() do
+
+		local relativePoint = editableMesh:GetPosition(vertexId);
+		local localPoint = (relativePoint - center)
+
+		for _, faceId in editableMesh:GetFaces() do
+			local vertices = editableMesh:GetFaceVertices(faceId);
+			local a, b, c = editableMesh:GetPosition(vertices[1]), editableMesh:GetPosition(vertices[2]), editableMesh:GetPosition(vertices[3])
+			if a == relativePoint or b == relativePoint or c == relativePoint then continue end
+
+			local faceCenter = (a+b+c) / 3;
+
+			local normal = vector.normalize(vector.cross(b - a, c - a)) -- SHOUTOUT CLV FOR NUCLEAR QUANTUM FORMULA  
+			local distance = vector.dot(normal, a) -- SHOUTOUT CLV FOR NUCLEAR QUANTUM FORMULA   
+			if distance < 0 then -- SHOUTOUT CLV FOR NUCLEAR QUANTUM FORMULA   
+				normal = -normal -- SHOUTOUT CLV FOR NUCLEAR QUANTUM FORMULA   
+				distance = -distance -- SHOUTOUT CLV FOR NUCLEAR QUANTUM FORMULA   
+			end -- SHOUTOUT CLV FOR NUCLEAR QUANTUM FORMULA   
+
+			local pointUnit = (faceCenter - relativePoint).Unit;
+			local dotProduct = pointUnit:Dot(normal);
+
+			if dotProduct > -0.1 then
+				continue
+			else
+				wrongDot = dotProduct
+				nonConvex = true
+				break
+			end
+		end	
+		if nonConvex then break end;
+	end
+
+	return not nonConvex, wrongDot
+end
+
+function module:Run(promptLibrary)
+	local selectedMesh = Selection:Get()[1] :: MeshPart;
+	if not (selectedMesh and selectedMesh:IsA'MeshPart') then warn('[MESH LAB] Please select a MeshPart') return end;
+
+	local content = selectedMesh.MeshContent;
+	if content.SourceType ~= Enum.ContentSourceType.Object then warn('[MESH LAB] MeshPart must be editable') return end;
+	local editableMesh = selectedMesh.MeshContent.Object;
+
+	local prompt = promptLibrary();
+
+	local originalMeshSize = editableMesh:GetSize();
+	local scaling = selectedMesh.Size / originalMeshSize;
+
+	local reusedPositions = {};
+	local originalPositions = {};
+	
+	local startConvexOnly = selectedMesh:FindFirstAncestor("DecomposedMesh") and true;
+	
+	local convexToggle = prompt:AddToggle("Convex Only", startConvexOnly)
+
+	for _, faceId in editableMesh:GetFaces() do
+		local vertices = editableMesh:GetFaceVertices(faceId);
+		for _, vertexId in vertices do
+			local vertPosition = editableMesh:GetPosition(vertexId);
+			originalPositions[vertexId] = vertPosition;
+
+
+			local reusedPosition = reusedPositions[vertPosition]
+			if reusedPosition then 
+				local samePosVert = Instance.new('Folder');
+				samePosVert.Name = vertexId;
+				samePosVert.Parent = reusedPosition 	
+			else
+				local attachment = Instance.new('Attachment');
+				attachment.Name = vertexId;
+				attachment.Visible = true
+
+				reusedPositions[vertPosition] = attachment;
+
+				vertPosition *= scaling;
+				attachment.Position = vertPosition;
+				attachment.Parent = selectedMesh;
+			end;
+		end
+	end
+
+	local liveUpdateLoop = true;
+	task.spawn(function()
+		while task.wait() do
+			if not liveUpdateLoop then break end;
+
+			local oldVerts = {};
+
+			local selectedAttachments = Selection:Get();
+			for i, vertexAttachmentSet in selectedAttachments do
+				if vertexAttachmentSet.Parent == selectedMesh then
+					local lastChange = vertexAttachmentSet:GetAttribute("LastChange")
+					if lastChange and lastChange == vertexAttachmentSet.Position then
+						continue;
+					end
+
+					local attachmentPos = vertexAttachmentSet.Position
+					local unscaledVertPos = attachmentPos / scaling;
+					local setId = tonumber(vertexAttachmentSet.Name);
+					oldVerts[vertexAttachmentSet] = editableMesh:GetPosition(setId);
+
+					for _, vertexAttachment in {vertexAttachmentSet, unpack(vertexAttachmentSet:GetChildren())} do
+						local vertId = tonumber(vertexAttachment.Name);
+						editableMesh:SetPosition(vertId, unscaledVertPos);
+					end;
+
+					vertexAttachmentSet:SetAttribute("LastChange", attachmentPos);
+				else
+					table.remove(selectedAttachments, i);
+					Selection:Set(selectedAttachments);
+				end
+			end
+
+			if convexToggle() then
+				local convex, wrongDot = isConvex(editableMesh);
+				if not convex then
+					--warn(`NON CONVEX MESH ({wrongDot}), REVERTED TO LAST POSITIONS`);
+					for vertexAttachmentSet, vertPos in oldVerts do
+						for _, vertexAttachment in {vertexAttachmentSet, unpack(vertexAttachmentSet:GetChildren())} do
+							local vertId = tonumber(vertexAttachment.Name);
+							editableMesh:SetPosition(vertId, vertPos);
+							vertexAttachmentSet.Position = vertPos * scaling;
+						end;
+					end
+
+					Selection:Set({});
+					Selection:Set(selectedAttachments);
+				end
+			end
+		end
+	end)
+
+	local save
+	
+	prompt:AddButton("Save", function()
+		save = true;	
+	end)
+	
+	prompt:AddButton("Cancel", function()
+		save = false;	
+	end)
+	
+	local promptFrame = prompt.Prompt;
+	promptFrame.AnchorPoint = Vector2.new(1, 0);
+	promptFrame.Position = UDim2.new(1, -20, 0, 20);
+
+	repeat task.wait() until save ~= nil or not promptFrame.Parent;
+	
+	promptFrame:Destroy();
+
+	liveUpdateLoop = false;
+	selectedMesh:SetAttribute('OriginalSize', originalMeshSize);
+	selectedMesh:ClearAllChildren();
+
+	if not save then
+		for vertId, vertPos in originalPositions do
+			editableMesh:SetPosition(vertId, vertPos);
+		end
+	end
+end
+
+return module
+]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBX3523753A532B4979A430F13B2F2EE8CA">
+					<Properties>
+						<BinaryString name="AttributesSerialize">AQAAAAYAAABIaWRkZW4DAQ==</BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">OptimizeHullModels</string>
+						<string name="ScriptGuid">{AA69D354-0E45-42CD-933C-5FB395A12822}</string>
+						<ProtectedString name="Source"><![CDATA[--!strict
+--!native
+--!optimize 2
+
+local SerializationService = game:GetService("SerializationService")
+local AssetService = game:GetService("AssetService")
+local Selection = game:GetService("Selection")
+
+local QuickHull = require(script.Parent.Parent.Modules.QuickHull)
+
+local MIN_VERTEX_COUNT = 4
+local MIN_VOLUME_RATIO = 0.7
+
+type Vertex = Vector3
+
+local module = {
+	Icon = "rbxassetid://75490846570565",
+	Name = "Merge Optimized Convex Hulls",
+	LayoutOrder = 8,
+	Category = "Mesh"
+}
+
+function module:Run()
+	local function hullVolume(vertices: {Vertex}): number
+		if #vertices < 4 then return 0 end
+		local minX, maxX = vertices[1].X, vertices[1].X
+		local minY, maxY = vertices[1].Y, vertices[1].Y
+		local minZ, maxZ = vertices[1].Z, vertices[1].Z
+		for _, v in ipairs(vertices) do
+			minX = math.min(minX, v.X)
+			maxX = math.max(maxX, v.X)
+			minY = math.min(minY, v.Y)
+			maxY = math.max(maxY, v.Y)
+			minZ = math.min(minZ, v.Z)
+			maxZ = math.max(maxZ, v.Z)
+		end
+		return (maxX - minX) * (maxY - minY) * (maxZ - minZ)
+	end
+
+	local function collectVertices(meshParts: {MeshPart}): {Vertex}
+		local allVertices: {Vertex} = {}
+		for _, meshPart in ipairs(meshParts) do
+			local mesh = meshPart.MeshContent.Object :: EditableMesh
+			local cframe = meshPart.CFrame
+			for _, v in mesh:GetVertices() do
+				local localPos = mesh:GetPosition(v)
+				local worldPos = cframe:PointToWorldSpace(localPos)
+				table.insert(allVertices, worldPos)
+			end
+		end
+		return allVertices
+	end
+
+	local function createEditableMeshFromHull(faces: {any}, points: {Vertex}): EditableMesh
+		local editableMesh = AssetService:CreateEditableMesh()
+
+		local vertexMap = {}
+		local function getVertexID(v: Vertex): number
+			local key = tostring(v)
+			if not vertexMap[key] then
+				vertexMap[key] = editableMesh:AddVertex(v)
+			end
+			return vertexMap[key]
+		end
+
+		for _, face in ipairs(faces) do
+			local vid0 = getVertexID(points[face.a])
+			local vid1 = getVertexID(points[face.b])
+			local vid2 = getVertexID(points[face.c])
+
+			local nid = editableMesh:AddNormal()
+			local fid = editableMesh:AddTriangle(vid0, vid1, vid2)
+
+			editableMesh:SetFaceNormals(fid, {nid, nid, nid})
+		end
+
+		editableMesh:RemoveUnused()
+		return editableMesh
+	end
+	
+	local selectedModels = Selection:Get()[1]
+
+	local hullData = {}
+	local processed = {}
+	local mergedHulls = {}
+
+	for _, meshPart in ipairs(selectedModels:GetChildren()) do
+		local vertices = collectVertices({meshPart})
+		if #vertices >= MIN_VERTEX_COUNT then
+			local points = QuickHull.dedupe(vertices, 1e-5)
+			local ok, faces = pcall(function()
+				return QuickHull.compute(points)
+			end)
+
+			if ok and faces then
+				local volume = hullVolume(points)
+				hullData[meshPart] = {
+					points = points,
+					faces = faces,
+					volume = volume
+				}
+			else
+				warn("Failed to compute hull for mesh part: " .. meshPart.Name)
+			end
+		end
+	end
+
+	for meshA, dataA in pairs(hullData) do
+		if processed[meshA] then
+			continue
+		end
+
+		local mergeGroup = {meshA}
+
+		local combinedVerts = {}
+		for _, v in ipairs(dataA.points) do
+			table.insert(combinedVerts, v)
+		end
+
+		local combinedVolume = dataA.volume
+
+		for meshB, dataB in pairs(hullData) do
+			if meshA == meshB or processed[meshB] then
+				continue
+			end
+
+			local newVerts = {}
+			for _, v in ipairs(combinedVerts) do
+				table.insert(newVerts, v)
+			end
+			for _, v in ipairs(dataB.points) do
+				table.insert(newVerts, v)
+			end
+
+			local ok, newFaces = pcall(function()
+				return QuickHull.compute(newVerts)
+			end)
+
+			if not ok then
+				continue
+			end
+
+			local newVolume = hullVolume(newVerts)
+			local volumeRatio = combinedVolume / newVolume
+
+			if volumeRatio >= MIN_VOLUME_RATIO then
+				table.insert(mergeGroup, meshB)
+
+				combinedVerts = newVerts
+				combinedVolume = newVolume
+			end
+		end
+
+		for _, m in ipairs(mergeGroup) do
+			processed[m] = true
+		end
+
+		table.insert(mergedHulls, {
+			meshes = mergeGroup,
+			verts = combinedVerts,
+			volume = combinedVolume
+		})
+	end
+
+	local originalHullCount = #selectedModels:GetChildren()
+	local newHullCount = #mergedHulls
+
+	for _, merged in ipairs(mergedHulls) do
+		local ok, faces = pcall(function()
+			return QuickHull.compute(merged.verts)
+		end)
+
+		if not ok or not faces then
+			warn("Failed to compute merged hull")
+			continue
+		end
+
+		local referenceCFrame = merged.meshes[1].CFrame
+		local referencePosition = referenceCFrame.Position
+
+		local localVerts = {}
+		for _, vertex in ipairs(merged.verts) do
+			table.insert(localVerts, referenceCFrame:PointToObjectSpace(vertex))
+		end
+
+		local mesh = createEditableMeshFromHull(faces, localVerts)
+		local meshPart = AssetService:CreateMeshPartAsync(Content.fromObject(mesh))
+
+		meshPart.Material = Enum.Material.Plastic
+		meshPart.Transparency = 0
+		meshPart.Name = "MergedHull_" .. #merged.meshes
+		meshPart.CFrame = referenceCFrame
+		meshPart.Parent = workspace
+
+		for _, originalMeshPart in ipairs(merged.meshes) do
+			if originalMeshPart and originalMeshPart.Parent then
+				originalMeshPart:Destroy()
+			end
+		end
+
+		print("Merged", #merged.meshes, "meshes into a hull with approx volume:", merged.volume)
+		print("Number of triangles in merged hull:", #faces)
+	end
+
+	print("Original hull count:", originalHullCount)
+	print("New merged hull count:", newHullCount)
+
+	if newHullCount == 0 then
+		warn("No valid hulls were created from the selection")
+	end
+end
+
+return module]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBX61A2043E202B4D738B013B0B6B499DA2">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">MeshFromFile</string>
+						<string name="ScriptGuid">{94F299CE-2207-46BE-B62F-7C8B16AE1C49}</string>
+						<ProtectedString name="Source"><![CDATA[local StudioService = game:GetService("StudioService");
+local AssetService = game:GetService("AssetService");
+
+local module = {
+	Icon = "rbxassetid://76115549781375",
+	Name = "Editable Mesh from file",
+	Category = "Mesh",
+	LayoutOrder = 4
+}
+
+local camera = workspace.CurrentCamera;
+
+local function createEditableMesh(hull)
+	local eMesh: EditableMesh = AssetService:CreateEditableMesh()
+	local vertexIds = table.create(#hull.verts)
+
+	for _, vertex in hull.verts do
+		local vId = eMesh:AddVertex(vertex)
+		table.insert(vertexIds, vId)
+	end
+
+	for i, tri in hull.tris do
+		if not vertexIds[tri[1]] then
+			warn(tri[1],tri[2],tri[3],#hull.verts)
+		end
+		eMesh:AddTriangle(
+			vertexIds[tri[1]],
+			vertexIds[tri[2]],
+			vertexIds[tri[3]]
+		)
+	end
+
+	eMesh:RemoveUnused()
+	return eMesh
+end
+
+local function parseOBJIntoHulls(fileData, separate)
+	local lines = fileData:split("\n")
+
+	local allVertices = {}      
+	local allFaces = {}      
+
+	local function tonumber_or_nil(s)
+		local n = tonumber(s)
+		return n
+	end
+
+	local function resolveIndex(i, count)
+		if i < 0 then
+			return count + i + 1
+		else
+			return i
+		end
+	end
+
+	local function addFaceIndices(idxs)
+		if #idxs < 3 then return end
+		for j = 2, #idxs - 1 do
+			table.insert(allFaces, { idxs[1], idxs[j], idxs[j+1] })
+		end
+	end
+
+	for _, line in lines do
+		local args = line:split(" ")
+		local tag = args[1]
+
+		if tag == "v" then
+			local x = tonumber_or_nil(args[2])
+			local y = tonumber_or_nil(args[3])
+			local z = tonumber_or_nil(args[4])
+			if x and y and z then
+				table.insert(allVertices, vector.create(x, y, z))
+			end
+
+		elseif tag == "f" then
+			local raw = {}
+			for i = 2, #args do
+				local a = args[i]
+				if a ~= "" then
+					local first = a:split("/")[1]
+					local idx = tonumber_or_nil(first)
+					if idx then
+						idx = resolveIndex(idx, #allVertices)
+						table.insert(raw, idx)
+					end
+				end
+			end
+			if #raw >= 3 then
+				addFaceIndices(raw)
+			end
+		end
+	end
+
+	local nVerts = #allVertices
+	local parent = table.create(nVerts)
+	local rank = table.create(nVerts)
+
+	for i = 1, nVerts do
+		parent[i] = i
+		rank[i] = 0
+	end
+
+	local function find(a)
+		while parent[a] ~= a do
+			parent[a] = parent[parent[a]] 
+			a = parent[a]
+		end
+		return a
+	end
+
+	local function union(a, b)
+		local ra, rb = find(a), find(b)
+		if ra == rb then return end
+		if rank[ra] < rank[rb] then
+			parent[ra] = rb
+		elseif rank[ra] > rank[rb] then
+			parent[rb] = ra
+		else
+			parent[rb] = ra
+			rank[ra] += 1
+		end
+	end
+
+
+	for _, tri in allFaces do
+		union(tri[1], tri[2])
+		union(tri[2], tri[3])
+	end
+
+	local buckets = {allFaces}
+	if separate then
+		buckets = {}
+
+		for _, tri in allFaces do
+			local rep = find(tri[1])
+			local list = buckets[rep]
+			if list == nil then
+				list = {}
+				buckets[rep] = list
+			end
+			table.insert(list, tri)
+		end
+	end
+
+	
+	local function makeHull(facesForHull)
+		local used, remap, verts, index = {}, {}, {}, 0
+
+		for _, tri in facesForHull do
+			for _, idx in tri do
+				used[idx] = true
+			end
+		end
+		for i, v in allVertices do
+			if used[i] then
+				remap[i] = index
+				table.insert(verts, v)
+				index += 1
+			end
+		end
+
+		local tris = {}
+		for _, tri in facesForHull do
+			table.insert(tris, {
+				(remap[tri[1]] or 0) + 1,
+				(remap[tri[2]] or 0) + 1,
+				(remap[tri[3]] or 0) + 1,
+			})
+		end
+
+		return { verts = verts, tris = tris }
+	end
+
+	local hulls = {}
+	for _, facesForHull in buckets do
+		table.insert(hulls, makeHull(facesForHull))
+	end
+
+	return hulls
+end
+
+
+function module:Run(promptLibrary)	
+	local objFile = StudioService:PromptImportFile({"obj"}) :: File;
+	if not objFile then return end;
+	
+	local fileData = objFile:GetBinaryContents();
+	
+	local cameraCFrame = camera.CFrame;
+	local meshPosition = workspace:Raycast(cameraCFrame.Position, cameraCFrame.LookVector * 1000);
+	meshPosition = meshPosition and CFrame.new(meshPosition.Position) or cameraCFrame * CFrame.new(0, 0, -1000);
+	
+	local import;
+	
+	local prompt = promptLibrary();
+	
+	local separate = prompt:AddToggle("Separate Loose Meshes", true)
+	prompt:AddButton("Import", function()
+		import = true;	
+	end)
+	
+	prompt:AddButton("Cancel", function()
+		import = false;	
+	end)
+	
+	local promptFrame = prompt.Prompt;
+
+	repeat task.wait() until import ~= nil or not promptFrame.Parent;
+
+	local separateMeshes = separate();
+	promptFrame:Destroy();
+	
+	if not import then return end;
+	
+	local hulls = parseOBJIntoHulls(fileData, separateMeshes);
+	
+	local meshCenter, vertCount = Vector3.new(), 0;
+	for _, hull in hulls do
+		for _, vert in hull.verts do
+			meshCenter += vert;
+			vertCount += 1
+		end
+	end
+	
+	meshCenter /= vertCount;
+	
+	local meshes = Instance.new("Model");
+	meshes.Name = "OBJ";
+	meshes.Parent = game:GetService("Selection"):Get()[1] or workspace
+	
+
+	for _, hull in hulls do
+		local newCenter = Vector3.new()
+		for j, vertex in hull.verts do
+			newCenter += vertex;
+		end
+		
+		newCenter /= #hull.verts;
+		
+		for j, vertex in hull.verts do
+			hull.verts[j] = vertex - newCenter;
+		end
+
+		local editableMesh: EditableMesh = createEditableMesh(hull)
+		
+		local meshPart: MeshPart = AssetService:CreateMeshPartAsync(Content.fromObject(editableMesh), {CollisionFidelity = Enum.CollisionFidelity.Box})
+		meshPart.DoubleSided = true;
+		meshPart.Anchored = true
+		meshPart.Parent = meshes
+		
+		meshPart.Position = (meshPosition.Position + newCenter) - meshCenter;
+	end
+
+	game:GetService("Selection"):Set({meshes});
+
+end
+
+return module
+]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBXD49230E6805F45119A05693392D4BDDB">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">ShowUVs</string>
+						<string name="ScriptGuid">{C201DB18-404F-43AF-A26A-A7B9867B7E39}</string>
+						<ProtectedString name="Source"><![CDATA[local Selection = game:GetService("Selection");
+local AssetService = game:GetService("AssetService");
+
+local module = {
+	Icon = "rbxassetid://128403263703041",
+	Name = "View Mesh UVs",
+	LayoutOrder = 6,
+	Category = "Mesh"
+}
+
+local function getTexture(mesh: MeshPart) : Content
+	local surfaceAppearance = mesh:FindFirstChildOfClass("SurfaceAppearance");
+	if surfaceAppearance then
+		return surfaceAppearance.ColorMapContent;
+	end
+	
+	return mesh.TextureContent;
+end
+
+function module:Run(promptLibrary)
+	local selectedMesh = Selection:Get()[1] :: MeshPart;
+	if not (selectedMesh and selectedMesh:IsA'MeshPart') then warn('[MESH LAB] Please select a MeshPart') return end;
+
+	local content = selectedMesh.MeshContent;
+	local editableMesh : EditableImage;
+	if content.SourceType == Enum.ContentSourceType.Object then
+		editableMesh = selectedMesh.MeshContent.Object :: EditableMesh;
+	else
+		local s = pcall(function() editableMesh = AssetService:CreateEditableMeshAsync(content); end);
+		if not s then
+			warn('[MESH LAB] You do not have Editable* permission for selected MeshPart');
+			return 
+		end;
+	end;
+
+	local prompt = promptLibrary();
+	
+	local UVMap = prompt:AddUVMap();
+	UVMap.ImageContent = getTexture(selectedMesh);
+	
+	local UVEditableImage = AssetService:CreateEditableImage({Size = Vector2.one * 1024});
+	UVEditableImage:DrawRectangle(Vector2.zero, UVEditableImage.Size, Color3.new(1, 1, 1), 1, Enum.ImageCombineType.Overwrite); -- ALPHA BLEEDING THE WHITE LINES
+	
+	UVMap.UVs.ImageContent = Content.fromObject(UVEditableImage);
+	
+	do -- Transparency toggle on hover
+		UVMap.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				UVMap.ImageTransparency = 0.5;
+			end
+		end)
+		
+		UVMap.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				UVMap.ImageTransparency = 0;
+			end
+		end)
+		
+	end
+	
+	local meshUvs = {};
+	local bridges = {};
+	
+	for _, uvId in editableMesh:GetUVs() do
+		local uvCoords = editableMesh:GetUV(uvId);
+
+		meshUvs[uvId] = uvCoords;
+	end
+
+	local function bridgeExist(uv1, uv2)
+		return	bridges[`{uv1}_{uv2}`] or 
+				bridges[`{uv2}_{uv1}`]
+
+	end
+	
+	local rectanglePrefab = AssetService:CreateEditableImage({Size = Vector2.new(1, 1)});
+	rectanglePrefab:DrawRectangle(Vector2.zero, Vector2.one, Color3.new(1, 1, 1), 0, Enum.ImageCombineType.Overwrite);
+	
+	local function makeBridge(uv1, uv2)
+		local scaling = UVEditableImage.Size.X;
+		
+		local pointA = meshUvs[uv1];
+		local pointB = meshUvs[uv2];
+		
+
+		local mid = ((pointA + pointB) / 2) * scaling
+		local diff = (pointB - pointA) * scaling
+		local length = diff.Magnitude
+		local angle = math.deg(math.atan2(diff.Y, diff.X))
+
+
+		UVEditableImage:DrawImageTransformed(mid, Vector2.new(length, 3), angle, rectanglePrefab, {CombineType = Enum.ImageCombineType.Overwrite})
+		
+		bridges[`{uv1}_{uv2}`] = true;
+	end
+	
+	
+	for uvId, _ in meshUvs do
+		for _, vertId in editableMesh:GetFacesWithUV(uvId) do
+			for _, uvId2 in editableMesh:GetFaceUVs(vertId) do
+				if uvId == uvId2 then continue end;
+				if bridgeExist(uvId, uvId2) then continue end;
+
+				makeBridge(uvId, uvId2);
+			end
+		end
+	end
+	
+	
+	local promptFrame = prompt.Prompt;
+	promptFrame.Size = UDim2.fromOffset(600, 668);
+
+	
+	prompt:AddButton("Close", function()
+		promptFrame:Destroy();
+	end)
+
+end
+
+
+return module
+]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+			<Item class="Folder" referent="RBX3184A7202A2344ACB37EBDE9670B49BF">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<string name="Name">Modules</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="ModuleScript" referent="RBX57469224D6624A2095150F081904BD76">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">rbxmParse</string>
+						<string name="ScriptGuid">{4107CA4A-58D9-4F88-8F1B-A56B7A3EA7CC}</string>
+						<ProtectedString name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage");
+local HttpService = game:GetService("HttpService");
+
+local module = {};
+export type sstrChunk = {
+	CompressedLength: number,
+	StartsAt: number, --Where the SSTR chunk starts
+	UncompressedLength: 'LZ4' | 'ZSTD' | 'Uncompressed',
+	Length: number, --True length of the chunk
+	Name: 'SSTR',
+	NumSharedStrings: number,
+	SharedStrings: {
+		{
+			md5: string,
+			str: string
+		}
+	}
+}
+
+--Intakes rbxm file and spits out the SSTR chunk
+function module.GetSSTR(b: buffer, mesh: MeshPart): sstrChunk
+	local LZ4 = require(script.helper.LZ4);
+	local chunk = {};
+	
+	local cursor = 32; --We start at 32 because I dont care about the header
+	
+	--Loop through chunks
+	local currentChunk;
+	while currentChunk ~= 'END' do
+		currentChunk = buffer.readstring(b, cursor, 4);
+		cursor+=4;
+		if currentChunk == 'SSTR' then break; end
+		
+		local compressedLength = buffer.readu32(b, cursor);
+		cursor+=4;
+		local uncompressedLength = buffer.readu32(b, cursor);
+		cursor+=8; --This is because we read the u32 and to skip the reserved which is also 4 byte
+		
+		cursor += compressedLength == 0 and uncompressedLength or compressedLength;
+	end
+	
+	if currentChunk ~= 'SSTR' then return; end	
+	chunk.StartsAt = cursor-4;
+	chunk.Name = 'SSTR';
+	chunk.CompressedLength = buffer.readu32(b, cursor);
+	cursor+=4;
+	chunk.UncompressedLength = buffer.readu32(b, cursor);
+	cursor+=4;
+	local reserved = buffer.readu32(b, cursor); --I assume 
+	cursor+=4;
+	
+	local decompressed;
+	if chunk.CompressedLength ~= 0 then
+		chunk.Length = chunk.CompressedLength;
+		local firstFour = buffer.readu32(b, cursor);
+		
+		chunk.CompressionType = firstFour == 0xFD2FB528 and 'ZSTD' or 'LZ4';
+		local compressedData = buffer.create(chunk.CompressedLength);
+		buffer.copy(compressedData, 0, b, cursor, chunk.CompressedLength);
+
+		if chunk.CompressionType == 'LZ4' then
+			if reserved ~= 0 then
+				error('Unsupported LZ4 reserved value: ' .. reserved);
+			end
+			
+			decompressed = LZ4(compressedData, chunk.UncompressedLength);
+		else
+			--This is cursed but here we go 
+			decompressed = HttpService:JSONDecode(`\{"m":null,"t":"buffer","base64":"{buffer.tostring(compressedData)}"\}`)
+		end
+		
+		if not decompressed then warn('Couldnt decompress!') return; end
+	else
+		chunk.Length = chunk.UncompressedLength;
+		decompressed = buffer.create(chunk.UncompressedLength);
+		buffer.copy(decompressed, 0, chunk, cursor, chunk.UncompressedLength);
+		chunk.CompressionType = 'Uncompressed'
+	end
+	
+	local chunkCursor = 0;
+	local sstrVersion = buffer.readu32(decompressed, chunkCursor);
+	chunkCursor+=4;
+	if sstrVersion ~= 0 then error('SSTR has incorrect version'); end
+	chunk.NumSharedStrings = buffer.readu32(decompressed, chunkCursor);
+	chunkCursor+=4;
+
+	chunk.SharedStrings = {};
+
+	for i = 1, chunk.NumSharedStrings do
+		local md5 = buffer.readstring(decompressed, chunkCursor, 16);
+
+		chunkCursor+=16;
+		local length = buffer.readu32(decompressed, chunkCursor);
+		chunkCursor+=4;
+
+		local sharedStr = buffer.readstring(decompressed, chunkCursor, length);
+		chunkCursor+=length;
+		
+		table.insert(chunk.SharedStrings, {md5 = md5, str = sharedStr});
+	end
+	
+	return chunk;
+end
+
+local function encode(buf: buffer): string
+	local out = HttpService:JSONEncode(buf)
+	return out:match('base64":"(.-)"');
+end
+
+--Returns the buffer, compressed size, uncompressed size
+function module.ConvertSSTR(sstrChunk: sstrChunk): (buffer, number, number)
+    local b64 = require(script.helper.b64);
+
+	local chunkSize = 8; --Version + Amount of shared strings
+	for _, v in sstrChunk.SharedStrings do
+		chunkSize += 16 + 4 + #v.str; --MD5 + string length + string
+	end
+	
+	local cursor = 0;
+	local b = buffer.create(chunkSize);
+	buffer.writeu32(b, cursor, 0); --Version
+	cursor+=4;
+	buffer.writeu32(b, cursor, #sstrChunk.SharedStrings); --Amount of shared strings
+	cursor+=4;
+	for _, v in sstrChunk.SharedStrings do
+		if #v.md5 ~= 16 then error('MD5 is not 16 bytes!'); end
+		buffer.writestring(b, cursor, v.md5, 16);
+		cursor+=16;
+		buffer.writeu32(b, cursor, #v.str);
+		cursor+=4;
+		buffer.writestring(b, cursor, v.str);
+		cursor += #v.str;
+	end
+	
+	--local compressedBuf = buffer.fromstring(b64.decode(encode(b)));
+	--if buffer.len(b) >= buffer.len(compressedBuf) then --Compressed!
+	--	warn(buffer.readu32(compressedBuf, 0) == 0xFD2FB528)
+	--	return compressedBuf, buffer.len(compressedBuf), buffer.len(b);
+	--end
+	
+	return b, 0, buffer.len(b);
+end
+
+function module.SaveSSTR(target: buffer, sstrChunk: sstrChunk): buffer
+	local sstrBuffer, compressedSize, uncompressedSize = module.ConvertSSTR(sstrChunk);
+	local originalSSTRSize = 16 + sstrChunk.Length;
+	local newSize = buffer.len(target) - originalSSTRSize + 16 + buffer.len(sstrBuffer);
+	local b = buffer.create(newSize);
+	local cursor = 0;
+
+	buffer.copy(b, cursor, target, 0, sstrChunk.StartsAt);
+	cursor = sstrChunk.StartsAt;
+
+	--warn(compressedSize, uncompressedSize);
+	buffer.writestring(b, cursor, 'SSTR');
+	cursor += 4;
+
+	buffer.writeu32(b, cursor, compressedSize);
+	cursor += 4;
+
+	buffer.writeu32(b, cursor, uncompressedSize);
+	cursor += 4;
+
+	buffer.writeu32(b, cursor, 0);
+	cursor += 4;
+
+	buffer.copy(b, cursor, sstrBuffer, 0);
+	cursor += buffer.len(sstrBuffer);
+
+	local afterSSTRStart = sstrChunk.StartsAt + originalSSTRSize;
+	buffer.copy(b, cursor, target, afterSSTRStart);
+
+	return b;
+end
+
+return module;]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="Folder" referent="RBX38D770C75EDD49C79A5ED0EF278966E3">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<string name="Name">helper</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+						<Item class="ModuleScript" referent="RBXA2AEDE293E2345728C7130F11D201E92">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<Content name="LinkedSource"><null></null></Content>
+								<string name="Name">LZ4</string>
+								<string name="ScriptGuid">{1FECC481-1FEB-4394-B076-DDDF492670DC}</string>
+								<ProtectedString name="Source"><![CDATA[--CLAUDE MADE THIS 
+-- Simple LZ4 Decompressor for LuaU
+local function decompressLZ4(compressedData, uncompressedSize)
+	local inputSize = buffer.len(compressedData)
+	local output = buffer.create(uncompressedSize)
+
+	local inputPos = 0
+	local outputPos = 0
+
+	while inputPos < inputSize and outputPos < uncompressedSize do
+		-- Read token
+		local token = buffer.readu8(compressedData, inputPos)
+		inputPos = inputPos + 1
+
+		-- Extract literal length from upper 4 bits
+		local literalLength = bit32.rshift(token, 4)
+
+		-- Handle extended literal length
+		if literalLength == 15 then
+			while inputPos < inputSize do
+				local byte = buffer.readu8(compressedData, inputPos)
+				inputPos = inputPos + 1
+				literalLength = literalLength + byte
+				if byte ~= 255 then break end
+			end
+		end
+
+		-- Copy literals
+		if literalLength > 0 then
+			buffer.copy(output, outputPos, compressedData, inputPos, literalLength)
+			inputPos = inputPos + literalLength
+			outputPos = outputPos + literalLength
+		end
+
+		-- Check if we've reached the end
+		if inputPos >= inputSize then break end
+
+		-- Read match offset
+		local matchOffset = buffer.readu16(compressedData, inputPos)
+		inputPos = inputPos + 2
+
+		-- Extract match length from lower 4 bits
+		local matchLength = bit32.band(token, 15) + 4
+
+		-- Handle extended match length
+		if bit32.band(token, 15) == 15 then
+			while inputPos < inputSize do
+				local byte = buffer.readu8(compressedData, inputPos)
+				inputPos = inputPos + 1
+				matchLength = matchLength + byte
+				if byte ~= 255 then break end
+			end
+		end
+
+		-- Copy match (handles overlapping matches)
+		local matchStart = outputPos - matchOffset
+		for i = 0, matchLength - 1 do
+			local byte = buffer.readu8(output, matchStart + i)
+			buffer.writeu8(output, outputPos + i, byte)
+		end
+		outputPos = outputPos + matchLength
+	end
+
+	return output
+end
+
+return decompressLZ4]]></ProtectedString>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+						<Item class="ModuleScript" referent="RBX16E47B61A5CB4CE48AEB6E3BA3A20EFE">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<Content name="LinkedSource"><null></null></Content>
+								<string name="Name">b64</string>
+								<string name="ScriptGuid">{BCF9AE43-6E64-4BD6-9B0D-7EF1C36D635D}</string>
+								<ProtectedString name="Source"><![CDATA[local SEQ = {
+	[0] = "A", "B", "C", "D", "E", "F", "G", "H",
+	"I", "J", "K", "L", "M", "N", "O", "P",
+	"Q", "R", "S", "T", "U", "V", "W", "X",
+	"Y", "Z", "a", "b", "c", "d", "e", "f",
+	"g", "h", "i", "j", "k", "l", "m", "n",
+	"o", "p", "q", "r", "s", "t", "u", "v",
+	"w", "x", "y", "z", "0", "1", "2", "3",
+	"4", "5", "6", "7", "8", "9", "+", "/",
+}
+
+local STRING_FAST = {}
+local INDEX = {[61] = 0, [65] = 0}
+
+for key, val in ipairs(SEQ) do
+	-- memoization
+	INDEX[string.byte(val)] = key
+end
+
+-- string.char has a MASSIVE overhead, its faster to precompute
+-- the values for performance
+for i = 0, 255 do
+	local c = string.char(i)
+	STRING_FAST[i] = c
+end
+
+local b64 = {}
+
+function b64.encode(str)
+	local len = string.len(str)
+	local output = table.create(math.ceil(len/4)*4)
+	local index = 1
+
+	for i = 1, len, 3 do
+		local b0, b1, b2 = string.byte(str, i, i + 2)
+		local b = bit32.lshift(b0, 16) + bit32.lshift(b1 or 0, 8) + (b2 or 0)
+
+		output[index] = SEQ[bit32.extract(b, 18, 6)]
+		output[index + 1] = SEQ[bit32.extract(b, 12, 6)]
+		output[index + 2] = b1 and SEQ[bit32.extract(b, 6, 6)] or "="
+		output[index + 3] = b2 and SEQ[bit32.band(b, 63)] or "="
+
+		index += 4
+	end
+
+	return table.concat(output)
+end
+
+function b64.decode(hash)
+	-- given a 24 bit word (4 6-bit letters), decode 3 bytes from it
+	local len = string.len(hash)
+	local output = table.create(len * 0.75)
+	
+	local index = 1
+	for i = 1, len, 4 do
+		local c0, c1, c2, c3 = string.byte(hash, i, i + 3)
+
+		local b = 
+			bit32.lshift(INDEX[c0], 18)
+			+ bit32.lshift(INDEX[c1], 12)
+			+ bit32.lshift(INDEX[c2], 6)
+			+ (INDEX[c3])
+		
+
+		output[index] = STRING_FAST[bit32.extract(b, 16, 8)]
+		output[index + 1] = c2 ~= "=" and STRING_FAST[bit32.extract(b, 8, 8)] or "="
+		output[index + 2] = c3 ~= "=" and STRING_FAST[bit32.band(b, 0xFF)] or "="
+		index += 3
+	end
+
+	return table.concat(output)
+end
+
+return b64]]></ProtectedString>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+				</Item>
+				<Item class="ModuleScript" referent="RBX4CE3ADF10A754919B0E3BA4EED814905">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">PartsToMesh</string>
+						<string name="ScriptGuid">{697FBBF1-6260-45C9-8BD8-54523FBA976D}</string>
+						<ProtectedString name="Source"><![CDATA[local AssetService = game:GetService("AssetService")
+
+local MeshConverter = {}
+
+function MeshConverter:GetBlockGeometry(size: Vector3)
+	local hx, hy, hz = size.X/2, size.Y/2, size.Z/2
+
+	local vertices = {
+		Vector3.new(-hx, -hy, -hz),
+		Vector3.new(hx, -hy, -hz),
+		Vector3.new(hx, hy, -hz),
+		Vector3.new(-hx, hy, -hz),
+		Vector3.new(-hx, -hy, hz),
+		Vector3.new(hx, -hy, hz),
+		Vector3.new(hx, hy, hz),
+		Vector3.new(-hx, hy, hz),
+	}
+
+	local triangles = {
+		{1,3,2},{1,4,3},
+		{5,7,8},{5,6,7},
+		{1,2,6},{1,6,5},
+		{4,7,3},{4,8,7},
+		{1,5,8},{1,8,4},
+		{2,3,7},{2,7,6},
+	}
+
+	return vertices, triangles
+end
+
+function MeshConverter:GetWedgeGeometry(size: Vector3)
+	local hx, hy, hz = size.X/2, size.Y/2, size.Z/2
+
+	local vertices = {
+		Vector3.new(hx, -hy, -hz),
+		Vector3.new(-hx, -hy, -hz),
+		Vector3.new(-hx, -hy, hz), 
+		Vector3.new(hx, -hy, hz),  
+		Vector3.new(hx, hy, hz),
+		Vector3.new(-hx, hy, hz),  
+	}
+
+	local triangles = {
+		{1,3,2}, {1,4,3},
+		{1,6,5}, {1,2,6},
+		{4,5,6}, {4,6,3},
+		{1,5,4}, {2,3,6},
+	}
+
+	return vertices, triangles
+end
+
+function MeshConverter:GetSphereGeometry(radius: number)
+	local vertices, triangles = {}, {}
+	local midpointCache = {}
+
+	local t = (1 + math.sqrt(5)) / 2
+	local scale = radius / math.sqrt(1 + t * t)
+
+	local function addVertex(x, y, z)
+		table.insert(vertices, Vector3.new(x * scale, y * scale, z * scale))
+		return #vertices
+	end
+
+	addVertex(-1, t, 0)
+	addVertex(1, t, 0)
+	addVertex(-1, -t, 0)
+	addVertex(1, -t, 0)
+
+	addVertex(0, -1, t)
+	addVertex(0, 1, t)
+	addVertex(0, -1, -t)
+	addVertex(0, 1, -t)
+
+	addVertex(t, 0, -1)
+	addVertex(t, 0, 1)
+	addVertex(-t, 0, -1)
+	addVertex(-t, 0, 1)
+
+	local faces = {
+		{1, 12, 6}, {1, 6, 2}, {1, 2, 8}, {1, 8, 11}, {1, 11, 12},
+		{2, 6, 10}, {6, 12, 5}, {12, 11, 3}, {11, 8, 7}, {8, 2, 9},
+		{4, 10, 5}, {4, 5, 3}, {4, 3, 7}, {4, 7, 9}, {4, 9, 10},
+		{5, 10, 6}, {3, 5, 12}, {7, 3, 11}, {9, 7, 8}, {10, 9, 2}
+	}
+
+	local function getMidpoint(v1, v2)
+		local key = math.min(v1, v2) .. "_" .. math.max(v1, v2)
+		if midpointCache[key] then
+			return midpointCache[key]
+		end
+
+		local p1 = vertices[v1]
+		local p2 = vertices[v2]
+		local mid = (p1 + p2) / 2
+
+		local normalized = mid.Unit * radius
+		table.insert(vertices, normalized)
+
+		midpointCache[key] = #vertices
+		return #vertices
+	end
+
+	for _ = 1, 2 do
+		local newFaces = {}
+		for _, face in faces do
+			local v1, v2, v3 = face[1], face[2], face[3]
+
+			local a = getMidpoint(v1, v2)
+			local b = getMidpoint(v2, v3)
+			local c = getMidpoint(v3, v1)
+
+			table.insert(newFaces, {v1, a, c})
+			table.insert(newFaces, {v2, b, a})
+			table.insert(newFaces, {v3, c, b})
+			table.insert(newFaces, {a, b, c})
+		end
+		faces = newFaces
+		midpointCache = {}
+	end
+
+	triangles = faces
+
+	return vertices, triangles
+end
+
+function MeshConverter:GetCylinderGeometry(size: Vector3, segments: number, orientation: CFrame)
+	orientation = orientation or CFrame.new()
+	segments = math.max(3, math.floor(segments or 24))
+
+	local length = size.X   
+	local radius = math.min(size.Y, size.Z) / 2    
+
+	local vertices, triangles = {}, {}
+
+	for i = 0, segments - 1 do
+		local theta = 2 * math.pi * i / segments
+		local c, s = math.cos(theta), math.sin(theta)
+
+		local pos = Vector3.new( length/2, radius * c, radius * s)
+		local neg = Vector3.new(-length/2, radius * c, radius * s)
+
+		table.insert(vertices, orientation:PointToWorldSpace(pos))
+		table.insert(vertices, orientation:PointToWorldSpace(neg))
+	end
+
+	for i = 0, segments - 1 do
+		local pos0, neg0 = i*2 + 1, i*2 + 2
+		local pos1, neg1 = ((i+1)%segments)*2 + 1, ((i+1)%segments)*2 + 2
+
+		table.insert(triangles, {pos0, pos1, neg0})
+		table.insert(triangles, {neg0, pos1, neg1})
+	end
+
+	local centerPos = #vertices + 1
+	local centerNeg = #vertices + 2
+	table.insert(vertices, orientation:PointToWorldSpace(Vector3.new( length/2, 0, 0)))
+	table.insert(vertices, orientation:PointToWorldSpace(Vector3.new(-length/2, 0, 0)))
+
+	for i = 0, segments - 1 do
+		local pos0, pos1 = i*2 + 1, ((i+1)%segments)*2 + 1
+		local neg0, neg1 = pos0 + 1, pos1 + 1
+
+		table.insert(triangles, {pos0, centerPos, pos1})
+		table.insert(triangles, {neg1, centerNeg, neg0})
+	end
+
+	return vertices, triangles
+end
+
+local function getPartGeometry(part: BasePart)
+	if part.Shape == Enum.PartType.Block then
+		return MeshConverter:GetBlockGeometry(part.Size)
+	elseif part.Shape == Enum.PartType.Wedge then
+		return MeshConverter:GetWedgeGeometry(part.Size)
+	elseif part.Shape == Enum.PartType.Cylinder then
+		return MeshConverter:GetCylinderGeometry(part.Size, 16)
+	elseif part.Shape == Enum.PartType.CornerWedge then
+		--return MeshConverter:GetCornerWedgeGeometry(part.Size)
+	elseif part.Shape == Enum.PartType.Ball then
+		return MeshConverter:GetSphereGeometry(part.ExtentsSize.X/2, 16, 16)
+	else
+		return {}, {}
+	end
+end
+
+local function transformVertex(part: BasePart, v: Vector3)
+	return part.CFrame:PointToWorldSpace(v)
+end
+
+function MeshConverter:GetPartGeometry(part: BasePart)
+	return getPartGeometry(part);
+end
+
+function MeshConverter:ModelToEditableMesh(model: Model): EditableMesh
+	local editableMesh = AssetService:CreateEditableMesh()
+
+	for _, part in model:QueryDescendants('BasePart:not(MeshPart,UnionOperation)') do
+		local vertices, triangles = getPartGeometry(part)
+		local vertexIds = {}
+		for i, v in vertices do
+			vertexIds[i] = editableMesh:AddVertex(transformVertex(part, v))
+		end
+		for _, tri in triangles do
+			editableMesh:AddTriangle(vertexIds[tri[1]], vertexIds[tri[2]], vertexIds[tri[3]])
+		end
+	end
+	
+	return editableMesh
+end
+
+function MeshConverter:ModelToMeshPart(model: Model): MeshPart
+	local editableMesh = MeshConverter:ModelToEditableMesh(model);
+	
+	return AssetService:CreateMeshPartAsync(Content.fromObject(editableMesh));
+end
+
+return MeshConverter]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBXE711878B5497451EA5CD1D53D987DA69">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">CollisionData</string>
+						<string name="ScriptGuid">{538A4AC7-E18A-416B-BE78-9308B8AD2B14}</string>
+						<ProtectedString name="Source"><![CDATA[--!native
+local CollisionData = {}
+local HttpService = game:GetService("HttpService")
+local DEBUG = false;
+
+function CollisionData:GetHeader(collisionBuffer: buffer)
+	local targetBuffer = buffer.create(51);
+	buffer.copy(targetBuffer, 0, collisionBuffer, 0, 51)
+	return targetBuffer
+end
+
+function CollisionData:Decode(collisionBuffer: buffer, mesh: MeshPart)
+	local offset = 6; -- SKIPS THE CSGPHS HEADER
+	local bufferLen = buffer.len(collisionBuffer);
+
+	local function readu32()
+		local int = buffer.readu32(collisionBuffer, offset);
+		offset += 4;
+		return int
+	end
+
+	local function readf32()
+		local float = buffer.readf32(collisionBuffer, offset)
+		offset += 4;
+		return float;
+	end
+
+	local function readVector3()
+		return vector.create(readf32(), readf32(), readf32())
+	end
+
+	local function readPhysicsData()
+		local volume = readf32()
+		local gravityCenter = readVector3()
+		local im_xx, im_xy, im_xz, im_yy, im_yz, im_zz = readf32(), readf32(), readf32(), readf32(), readf32(), readf32();
+
+		if DEBUG then
+			print(`\n-=====[ PHYSICS DATA ]=====-\nVolume: {volume}\nCenter of gravity: {gravityCenter}\n-==========================-\n`)
+		end
+
+		return {
+			volume = volume,
+			gravityCenter = gravityCenter,
+			inertia = {im_xx, im_xy, im_xz, im_yy, im_yz, im_zz}
+		}
+	end
+
+	local totalFaceCount = 0
+
+	local function readMesh()
+		offset += 40 -- trash bytes
+		local vertexAmount = readu32() / 3;
+		local vertices = {};
+
+		local vertWidth = readu32();
+
+		for i = 1, vertexAmount do
+			table.insert(vertices, readVector3() / mesh.MeshSize)
+		end
+
+		local faceCount = readu32() / 3;
+		local faces = {}
+
+		for i = 1, faceCount do
+			table.insert(faces, {readu32() + 1, readu32() + 1, readu32() + 1})
+		end
+
+		totalFaceCount += faceCount;
+
+		return {Vertices = vertices, Triangles = faces, vertWidth = vertWidth};
+	end
+
+
+	local collisionType = readu32();
+	local hulls = {};
+	local physicsData = nil;
+
+	if collisionType == 7 then
+		offset += 1
+		physicsData = readPhysicsData()
+
+		while offset + 1 < bufferLen do
+			table.insert(hulls, readMesh())
+		end
+	end
+
+	if DEBUG then
+		print(`\n-=====[ COLLISION DATA ]=====-\nHulls: {#hulls}\nTriangles: {totalFaceCount}\n-============================-\n`)
+	end
+
+	return hulls, physicsData, collisionType
+end
+
+function CollisionData:Encode(hulls, physicsData, mesh: MeshPart, collisionType: number?)
+	collisionType = collisionType or 7
+
+	-- Calculate buffer size needed
+	local bufferSize = 6 -- CSGPHS header
+	bufferSize += 4 -- collision type
+
+	if collisionType == 7 then
+		bufferSize += 1 -- extra byte after collision type
+		bufferSize += 4 + 12 + 24 -- physics data (volume + gravity center + inertia matrix)
+
+		for _, hull in pairs(hulls) do
+			bufferSize += 40 -- trash bytes
+			bufferSize += 4 -- vertex count
+			bufferSize += 4 -- vertex width
+			bufferSize += #hull.Vertices * 12 -- vertices (3 floats each)
+			bufferSize += 4 -- face count
+			bufferSize += #hull.Triangles * 12 -- faces (3 u32s each)
+		end
+	end
+
+	local collisionBuffer = buffer.create(bufferSize)
+	local offset = 0
+
+	local function writeu32(value)
+		buffer.writeu32(collisionBuffer, offset, value)
+		offset += 4
+	end
+
+	local function writef32(value)
+		buffer.writef32(collisionBuffer, offset, value)
+		offset += 4
+	end
+	
+	local function writeu8(value)
+		buffer.writeu8(collisionBuffer, offset, value)
+		offset += 1
+	end
+
+	local function writeVector3(vec)
+		writef32(vec.x)
+		writef32(vec.y)
+		writef32(vec.z)
+	end
+
+	local function writetrash()
+		writeu32(16)
+
+		for i = 1, 16 do writeu8(0) end
+
+		writeu32(16)
+
+		for i = 1, 14 do writeu8(0) end
+
+		writeu8(0x80)
+		writeu8(0x3F)
+	end
+
+	-- Write CSGPHS header
+	buffer.writestring(collisionBuffer, 0, "CSGPHS")
+	offset = 6
+
+	-- Write collision type
+	writeu32(collisionType)
+
+	if collisionType == 7 then
+		-- This byte indicates the property 2 --> Default, 3 --> Precicse
+		buffer.writeu8(collisionBuffer, offset, 3)
+		offset += 1
+
+		-- Write physics data
+		if physicsData then
+			writef32(physicsData.volume)
+			writeVector3(physicsData.gravityCenter)
+			for i = 1, 6 do
+				writef32(physicsData.inertia[i])
+			end
+		else
+			-- Default physics data
+			writef32(1.0) -- volume
+			writeVector3(vector.create(0, 0, 0)) -- gravity center
+			writef32(1.0) -- im_xx
+			writef32(0.0) -- im_xy
+			writef32(0.0) -- im_xz
+			writef32(1.0) -- im_yy
+			writef32(0.0) -- im_yz
+			writef32(1.0) -- im_zz
+		end
+
+		-- Write mesh data
+		for _, hull in pairs(hulls) do
+			-- Write 40 trash bytes
+			writetrash()
+
+			-- Write vertex count (multiplied by 3)
+			writeu32(#hull.Vertices * 3)
+
+			-- Write vertex width
+			writeu32(4)
+
+			-- Write vertices (already in collision space, don't scale)
+			for _, vertex in pairs(hull.Vertices) do
+				writeVector3(vertex)
+			end
+
+			-- Write face count (multiplied by 3)
+			writeu32(#hull.Triangles * 3)
+
+			-- Write faces (subtract 1 from indices)
+			for _, face in pairs(hull.Triangles) do
+				writeu32(face[1] - 1)
+				writeu32(face[2] - 1)
+				writeu32(face[3] - 1)
+			end
+		end
+	end
+
+	if DEBUG then
+		print(`\n-=====[ ENCODED COLLISION DATA ]=====-\nBuffer size: {bufferSize}\nHulls: {#hulls}\n-====================================-\n`)
+	end
+
+	return collisionBuffer
+end
+
+return CollisionData]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="ModuleScript" referent="RBX3C436AAF7CC9415FA382F948DAF9AD11">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<Content name="LinkedSource"><null></null></Content>
+						<string name="Name">QuickHull</string>
+						<string name="ScriptGuid">{77DD1095-D40C-45FD-90DF-21B573FBD92A}</string>
+						<ProtectedString name="Source"><![CDATA[--!native
+--!optimize 2
+
+local QuickHull = {}
+QuickHull.__index = QuickHull
+
+local Workspace = game:GetService("Workspace")
+local EPS = 1e-6
+local BEAM_WIDTH = 0.06
+local BEAM_COLOR = Color3.fromRGB(0, 0, 0)
+
+local function dot(a, b)
+	return a:Dot(b)
+end
+
+local function cross(a, b)
+	return a:Cross(b)
+end
+
+local function edgeKey(u, v)
+	return tostring(u) .. "|" .. tostring(v)
+end
+
+local function undirectedKey(u, v)
+	return (
+		u < v and tostring(u) .. "~" .. tostring(v)
+			or tostring(v) .. "~" .. tostring(u)
+	)
+end
+
+function QuickHull.collectVertices(meshParts)
+	local pts = {}
+
+	for _, mp in ipairs(meshParts) do
+		if mp and mp:IsA("MeshPart") then
+			local ed = mp.MeshContent and mp.MeshContent.Object
+
+			if ed then
+				local cf = mp.CFrame
+
+				for _, vid in ipairs(ed:GetVertices()) do
+					local lp = ed:GetPosition(vid)
+
+					table.insert(pts, cf:PointToWorldSpace(lp))
+				end
+			end
+		end
+	end
+
+	return pts
+end
+
+function QuickHull.dedupe(points, tol)
+	tol = tol or 1e-5
+
+	local seen = {}
+	local out = {}
+
+	for _, p in ipairs(points) do
+		local kx = math.floor(p.X / tol + 0.5)
+		local ky = math.floor(p.Y / tol + 0.5)
+		local kz = math.floor(p.Z / tol + 0.5)
+
+		local key = kx .. ":" .. ky .. ":" .. kz
+
+		if not seen[key] then
+			seen[key] = true
+
+			table.insert(out, p)
+		end
+	end
+
+	return out
+end
+
+local function computeNormal(a, b, c)
+	local n = cross(b - a, c - a)
+
+	if n.Magnitude > 0 then
+		return n.Unit
+	else
+		return Vector3.new(0, 0, 0)
+	end
+end
+
+local function makeFace(aIdx, bIdx, cIdx, points)
+	local a, b, c = points[aIdx], points[bIdx], points[cIdx]
+
+	local n = computeNormal(a, b, c)
+
+	return {
+		a = aIdx,
+		b = bIdx,
+		c = cIdx,
+		normal = n,
+
+		outside = {},
+		neighbors = {},
+	}
+end
+
+local function faceDistance(face, pIdx, points)
+	return dot(points[pIdx] - points[face.a], face.normal)
+end
+
+local function flipFace(face, points)
+	face.b, face.c = face.c, face.b
+
+	face.normal = computeNormal(points[face.a], points[face.b], points[face.c])
+end
+
+local function orientFaceOutward(face, interiorVec, points)
+	if dot(interiorVec - points[face.a], face.normal) > 0 then
+		flipFace(face, points)
+	end
+end
+
+local function buildInitialTetra(points)
+	local minX_i, maxX_i = 1, 1
+
+	for i = 2, #points do
+		if points[i].X < points[minX_i].X then
+			minX_i = i
+		end
+
+		if points[i].X > points[maxX_i].X then
+			maxX_i = i
+		end
+	end
+
+	local far_i, bestArea = nil, -1
+
+	for i = 1, #points do
+		if i ~= minX_i and i ~= maxX_i then
+			local area = cross(
+				points[maxX_i] - points[minX_i],
+				points[i] - points[minX_i]
+			).Magnitude
+
+			if area > bestArea then
+				bestArea = area
+				far_i = i
+			end
+		end
+
+	end
+	local planeN = cross(points[maxX_i] - points[minX_i], points[far_i] - points[minX_i])
+
+	local fourth_i, bestDist = nil, -1
+
+	for i = 1, #points do
+		if i ~= minX_i and i ~= maxX_i and i ~= far_i then
+			local d = math.abs(dot(planeN.Unit, points[i] - points[minX_i]))
+			if d > bestDist then
+				bestDist = d
+				fourth_i = i
+			end
+		end
+	end
+
+	local used = {}
+
+	used[minX_i] = true
+	used[maxX_i] = true
+	used[far_i] = true
+	used[fourth_i] = true
+
+	local interior = (
+		points[minX_i]
+			+ points[maxX_i]
+			+ points[far_i]
+			+ points[fourth_i]
+	) / 4
+
+	local faces = {
+		makeFace(minX_i, maxX_i, far_i, points),
+		makeFace(minX_i, far_i, fourth_i, points),
+		makeFace(minX_i, fourth_i, maxX_i, points),
+		makeFace(maxX_i, fourth_i, far_i, points),
+	}
+
+	for _, f in ipairs(faces) do
+		orientFaceOutward(f, interior, points)
+	end
+
+	return faces, interior, used
+end
+
+local function registerFace(face, edgeToFace)
+	for _, e in ipairs({ { face.a, face.b }, { face.b, face.c }, {
+		face.c,
+		face.a,
+		} }) do
+		local k = edgeKey(e[1], e[2])
+
+		edgeToFace[k] = face
+
+		local opp = edgeToFace[edgeKey(e[2], e[1])]
+
+		if opp then
+			face.neighbors[k] = opp
+
+			opp.neighbors[edgeKey(e[2], e[1])] = face
+		end
+	end
+end
+
+local function unregisterFace(face, edgeToFace)
+	for _, e in ipairs({ { face.a, face.b }, { face.b, face.c }, {
+		face.c,
+		face.a,
+		} }) do
+		local k = edgeKey(e[1], e[2])
+
+		edgeToFace[k] = nil
+
+		local opp = edgeToFace[edgeKey(e[2], e[1])]
+
+		if opp then
+			opp.neighbors[edgeKey(e[2], e[1])] = nil
+		end
+	end
+end
+
+local function assignPoints(pointIndices, faces, points)
+	for _, f in ipairs(faces) do
+		f.outside = {}
+	end
+
+	for _, pIdx in ipairs(pointIndices) do
+		local bestFace, bestD = nil, EPS
+
+		for _, f in ipairs(faces) do
+			local d = faceDistance(f, pIdx, points)
+
+			if d > bestD then
+				bestD = d
+				bestFace = f
+			end
+		end
+
+		if bestFace then
+			table.insert(bestFace.outside, pIdx)
+		end
+	end
+end
+
+local function findVisibleFaces(startFace, eyeIdx, points)
+	local stack = { startFace }
+
+	local visited = {}
+	local visible = {}
+
+	while #stack > 0 do
+		local f = table.remove(stack)
+
+		if not visited[f] then
+			visited[f] = true
+
+			if faceDistance(f, eyeIdx, points) > EPS then
+				table.insert(visible, f)
+
+				for _, n in pairs(f.neighbors) do
+					if n and not visited[n] then
+						table.insert(stack, n)
+					end
+				end
+			end
+		end
+	end
+
+	local visibleSet = {}
+
+	for _, f in ipairs(visible) do
+		visibleSet[f] = true
+	end
+
+	return visible, visibleSet
+end
+
+local function buildHorizon(visibleList, visibleSet, edgeToFace)
+	local horizon = {}
+
+	for _, f in ipairs(visibleList) do
+		for _, e in ipairs({ { f.a, f.b }, { f.b, f.c }, { f.c, f.a } }) do
+			local opp = edgeToFace[edgeKey(e[2], e[1])]
+
+			if not opp or not visibleSet[opp] then
+				table.insert(horizon, { e[1], e[2] })
+			end
+		end
+	end
+
+	return horizon
+end
+
+function QuickHull.compute(points)
+	if #points < 4 then
+		error("Need at least 4 points")
+	end
+
+	local pts = points
+
+	local faces, interiorVec, usedMap = buildInitialTetra(pts)
+
+	local edgeToFace = {}
+
+	for _, f in ipairs(faces) do
+		registerFace(f, edgeToFace)
+	end
+
+	local candidates = {}
+
+	for i = 1, #pts do
+		if not usedMap[i] then
+			table.insert(candidates, i)
+		end
+	end
+
+	assignPoints(candidates, faces, pts)
+
+	while true do
+		local faceWithOutside = nil
+
+		for _, f in ipairs(faces) do
+			if #f.outside > 0 then
+				faceWithOutside = f
+
+				break
+			end
+		end
+
+		if not faceWithOutside then
+			break
+		end
+
+		local farIdx = faceWithOutside.outside[1]
+
+		local maxD = faceDistance(faceWithOutside, farIdx, pts)
+
+		for _, pIdx in ipairs(faceWithOutside.outside) do
+			local d = faceDistance(faceWithOutside, pIdx, pts)
+
+			if d > maxD then
+				maxD = d
+				farIdx = pIdx
+			end
+		end
+
+		local visibleList, visibleSet = findVisibleFaces(faceWithOutside, farIdx, pts)
+
+		local reassignMap = {}
+		local reassignList = {}
+
+		for _, vf in ipairs(visibleList) do
+			for _, pIdx in ipairs(vf.outside) do
+				if pIdx ~= farIdx and not reassignMap[pIdx] then
+					reassignMap[pIdx] = true
+
+					table.insert(reassignList, pIdx)
+				end
+			end
+		end
+
+		local horizon = buildHorizon(visibleList, visibleSet, edgeToFace)
+
+		for _, vf in ipairs(visibleList) do
+			unregisterFace(vf, edgeToFace)
+		end
+
+		for i = #faces, 1, -1 do
+			if visibleSet[faces[i]] then
+				table.remove(faces, i)
+			end
+		end
+
+		local newFaces = {}
+
+		for _, e in ipairs(horizon) do
+			local newF = makeFace(e[1], e[2], farIdx, pts)
+
+			orientFaceOutward(newF, interiorVec, pts)
+			registerFace(newF, edgeToFace)
+			table.insert(faces, newF)
+			table.insert(newFaces, newF)
+		end
+
+		if #reassignList > 0 then
+			for _, nf in ipairs(newFaces) do
+				nf.outside = {}
+			end
+
+			for _, pIdx in ipairs(reassignList) do
+				local bestFace, bestD = nil, EPS
+
+				for _, nf in ipairs(newFaces) do
+					local d = faceDistance(nf, pIdx, pts)
+
+					if d > bestD then
+						bestD = d
+						bestFace = nf
+					end
+				end
+
+				if bestFace then
+					table.insert(bestFace.outside, pIdx)
+				end
+			end
+		end
+
+		for _, f in ipairs(faces) do
+			for i = #f.outside, 1, -1 do
+				if f.outside[i] == farIdx then
+					table.remove(f.outside, i)
+				end
+			end
+		end
+	end
+
+	return faces
+end
+
+return QuickHull]]></ProtectedString>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+		</Item>
+		<Item class="ScreenGui" referent="RBXE5F612B1F34A4630B0CA01204BBE1D1E">
+			<Properties>
+				<BinaryString name="AttributesSerialize"></BinaryString>
+				<bool name="AutoLocalize">true</bool>
+				<int name="DisplayOrder">0</int>
+				<bool name="Enabled">true</bool>
+				<bool name="IgnoreGuiInset">false</bool>
+				<string name="Name">MeshLab</string>
+				<bool name="ResetOnSpawn">true</bool>
+				<Ref name="RootLocalizationTable">null</Ref>
+				<int64 name="SourceAssetId">-1</int64>
+				<BinaryString name="Tags"></BinaryString>
+				<token name="ZIndexBehavior">1</token>
+			</Properties>
+			<Item class="Frame" referent="RBX35B1416E2C0A4B3F8FA200B3962A9656">
+				<Properties>
+					<bool name="Active">false</bool>
+					<Vector2 name="AnchorPoint">
+						<X>0</X>
+						<Y>0.5</Y>
+					</Vector2>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<bool name="AutoLocalize">true</bool>
+					<token name="AutomaticSize">2</token>
+					<Color3 name="BackgroundColor3">
+						<R>0.196078435</R>
+						<G>0.196078435</G>
+						<B>0.196078435</B>
+					</Color3>
+					<float name="BackgroundTransparency">0</float>
+					<Color3 name="BorderColor3">
+						<R>0</R>
+						<G>0</G>
+						<B>0</B>
+					</Color3>
+					<token name="BorderMode">0</token>
+					<int name="BorderSizePixel">0</int>
+					<bool name="ClipsDescendants">false</bool>
+					<bool name="Draggable">false</bool>
+					<int name="LayoutOrder">0</int>
+					<string name="Name">Frame</string>
+					<Ref name="NextSelectionDown">null</Ref>
+					<Ref name="NextSelectionLeft">null</Ref>
+					<Ref name="NextSelectionRight">null</Ref>
+					<Ref name="NextSelectionUp">null</Ref>
+					<UDim2 name="Position">
+						<XS>0</XS>
+						<XO>20</XO>
+						<YS>0.5</YS>
+						<YO>0</YO>
+					</UDim2>
+					<Ref name="RootLocalizationTable">null</Ref>
+					<float name="Rotation">0</float>
+					<bool name="Selectable">false</bool>
+					<Ref name="SelectionImageObject">null</Ref>
+					<UDim2 name="Size">
+						<XS>0</XS>
+						<XO>100</XO>
+						<YS>0</YS>
+						<YO>100</YO>
+					</UDim2>
+					<token name="SizeConstraint">0</token>
+					<int64 name="SourceAssetId">-1</int64>
+					<token name="Style">0</token>
+					<BinaryString name="Tags"></BinaryString>
+					<bool name="Visible">true</bool>
+					<int name="ZIndex">1</int>
+				</Properties>
+				<Item class="UICorner" referent="RBX1241548464334D8AB1EBFB00BA79147F">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<UDim name="CornerRadius">
+							<S>0</S>
+							<O>16</O>
+						</UDim>
+						<string name="Name">UICorner</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="UIListLayout" referent="RBXE867CF966BAE4C70A3BC06570D0118F6">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<token name="FillDirection">1</token>
+						<token name="HorizontalAlignment">0</token>
+						<string name="Name">UIListLayout</string>
+						<UDim name="Padding">
+							<S>0</S>
+							<O>10</O>
+						</UDim>
+						<token name="SortOrder">2</token>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+						<token name="VerticalAlignment">1</token>
+					</Properties>
+				</Item>
+				<Item class="UIPadding" referent="RBX1698D9796F6E4DD0AB37F89B13F76F0A">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<string name="Name">UIPadding</string>
+						<UDim name="PaddingBottom">
+							<S>0</S>
+							<O>10</O>
+						</UDim>
+						<UDim name="PaddingLeft">
+							<S>0</S>
+							<O>5</O>
+						</UDim>
+						<UDim name="PaddingRight">
+							<S>0</S>
+							<O>5</O>
+						</UDim>
+						<UDim name="PaddingTop">
+							<S>0</S>
+							<O>10</O>
+						</UDim>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+				<Item class="Frame" referent="RBXBA2AEB30FA0C4DBD8F761CBC8FBEF771">
+					<Properties>
+						<bool name="Active">false</bool>
+						<Vector2 name="AnchorPoint">
+							<X>0</X>
+							<Y>0</Y>
+						</Vector2>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<bool name="AutoLocalize">true</bool>
+						<token name="AutomaticSize">0</token>
+						<Color3 name="BackgroundColor3">
+							<R>0.392156869</R>
+							<G>0.392156869</G>
+							<B>0.392156869</B>
+						</Color3>
+						<float name="BackgroundTransparency">0</float>
+						<Color3 name="BorderColor3">
+							<R>0</R>
+							<G>0</G>
+							<B>0</B>
+						</Color3>
+						<token name="BorderMode">0</token>
+						<int name="BorderSizePixel">0</int>
+						<bool name="ClipsDescendants">false</bool>
+						<bool name="Draggable">false</bool>
+						<int name="LayoutOrder">0</int>
+						<string name="Name">Drag</string>
+						<Ref name="NextSelectionDown">null</Ref>
+						<Ref name="NextSelectionLeft">null</Ref>
+						<Ref name="NextSelectionRight">null</Ref>
+						<Ref name="NextSelectionUp">null</Ref>
+						<UDim2 name="Position">
+							<XS>0</XS>
+							<XO>0</XO>
+							<YS>0</YS>
+							<YO>0</YO>
+						</UDim2>
+						<Ref name="RootLocalizationTable">null</Ref>
+						<float name="Rotation">0</float>
+						<bool name="Selectable">false</bool>
+						<Ref name="SelectionImageObject">null</Ref>
+						<UDim2 name="Size">
+							<XS>1</XS>
+							<XO>-20</XO>
+							<YS>0</YS>
+							<YO>7</YO>
+						</UDim2>
+						<token name="SizeConstraint">0</token>
+						<int64 name="SourceAssetId">-1</int64>
+						<token name="Style">0</token>
+						<BinaryString name="Tags"></BinaryString>
+						<bool name="Visible">true</bool>
+						<int name="ZIndex">1</int>
+					</Properties>
+					<Item class="UICorner" referent="RBXD891C4E209BF4B8D8F10591386B50E67">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<UDim name="CornerRadius">
+								<S>0</S>
+								<O>8</O>
+							</UDim>
+							<string name="Name">UICorner</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+					<Item class="Frame" referent="RBXC7FD2720D57144A28D183BFCC4A2BECD">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0.5</X>
+								<Y>0.5</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<int name="LayoutOrder">0</int>
+							<string name="Name">Hitbox</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0.5</XS>
+								<XO>0</XO>
+								<YS>0.5</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>0</XS>
+								<XO>100</XO>
+								<YS>0</YS>
+								<YO>20</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="UIScale" referent="RBXB835E694A83648CA85BB3687B8AC2F15">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<string name="Name">UIScale</string>
+						<float name="Scale">1</float>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+				</Item>
+			</Item>
+			<Item class="Configuration" referent="RBX480F7FF0570745A39D34B10F5B8FF4DB">
+				<Properties>
+					<BinaryString name="AttributesSerialize"></BinaryString>
+					<string name="Name">Prefabs</string>
+					<int64 name="SourceAssetId">-1</int64>
+					<BinaryString name="Tags"></BinaryString>
+				</Properties>
+				<Item class="Frame" referent="RBX20C5252FBEC8474DA9EEAAD33770E240">
+					<Properties>
+						<bool name="Active">false</bool>
+						<Vector2 name="AnchorPoint">
+							<X>0</X>
+							<Y>0</Y>
+						</Vector2>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<bool name="AutoLocalize">true</bool>
+						<token name="AutomaticSize">2</token>
+						<Color3 name="BackgroundColor3">
+							<R>1</R>
+							<G>1</G>
+							<B>1</B>
+						</Color3>
+						<float name="BackgroundTransparency">1</float>
+						<Color3 name="BorderColor3">
+							<R>0</R>
+							<G>0</G>
+							<B>0</B>
+						</Color3>
+						<token name="BorderMode">0</token>
+						<int name="BorderSizePixel">0</int>
+						<bool name="ClipsDescendants">false</bool>
+						<bool name="Draggable">false</bool>
+						<int name="LayoutOrder">0</int>
+						<string name="Name">Category</string>
+						<Ref name="NextSelectionDown">null</Ref>
+						<Ref name="NextSelectionLeft">null</Ref>
+						<Ref name="NextSelectionRight">null</Ref>
+						<Ref name="NextSelectionUp">null</Ref>
+						<UDim2 name="Position">
+							<XS>0</XS>
+							<XO>0</XO>
+							<YS>0</YS>
+							<YO>0</YO>
+						</UDim2>
+						<Ref name="RootLocalizationTable">null</Ref>
+						<float name="Rotation">0</float>
+						<bool name="Selectable">false</bool>
+						<Ref name="SelectionImageObject">null</Ref>
+						<UDim2 name="Size">
+							<XS>1</XS>
+							<XO>0</XO>
+							<YS>0</YS>
+							<YO>0</YO>
+						</UDim2>
+						<token name="SizeConstraint">0</token>
+						<int64 name="SourceAssetId">-1</int64>
+						<token name="Style">0</token>
+						<BinaryString name="Tags"></BinaryString>
+						<bool name="Visible">true</bool>
+						<int name="ZIndex">1</int>
+					</Properties>
+					<Item class="Frame" referent="RBXD4F53337C4E4495A994103C2785CCC0E">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0.5</X>
+								<Y>0.5</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">3</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<int name="LayoutOrder">0</int>
+							<string name="Name">Topbar</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="TextButton" referent="RBX15298C2286C3465EB1AC13AA8558B78A">
+							<Properties>
+								<bool name="Active">true</bool>
+								<Vector2 name="AnchorPoint">
+									<X>0</X>
+									<Y>0</Y>
+								</Vector2>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<bool name="AutoButtonColor">true</bool>
+								<bool name="AutoLocalize">true</bool>
+								<token name="AutomaticSize">0</token>
+								<Color3 name="BackgroundColor3">
+									<R>0.196078435</R>
+									<G>0.196078435</G>
+									<B>0.196078435</B>
+								</Color3>
+								<float name="BackgroundTransparency">0</float>
+								<Color3 name="BorderColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<token name="BorderMode">0</token>
+								<int name="BorderSizePixel">0</int>
+								<bool name="ClipsDescendants">false</bool>
+								<bool name="Draggable">false</bool>
+								<token name="Font">0</token>
+								<int name="LayoutOrder">1</int>
+								<float name="LineHeight">1</float>
+								<bool name="Modal">false</bool>
+								<string name="Name">FoldButton</string>
+								<Ref name="NextSelectionDown">null</Ref>
+								<Ref name="NextSelectionLeft">null</Ref>
+								<Ref name="NextSelectionRight">null</Ref>
+								<Ref name="NextSelectionUp">null</Ref>
+								<UDim2 name="Position">
+									<XS>0</XS>
+									<XO>0</XO>
+									<YS>0</YS>
+									<YO>0</YO>
+								</UDim2>
+								<bool name="RichText">false</bool>
+								<Ref name="RootLocalizationTable">null</Ref>
+								<float name="Rotation">0</float>
+								<bool name="Selectable">true</bool>
+								<bool name="Selected">false</bool>
+								<Ref name="SelectionImageObject">null</Ref>
+								<UDim2 name="Size">
+									<XS>0</XS>
+									<XO>20</XO>
+									<YS>0</YS>
+									<YO>20</YO>
+								</UDim2>
+								<token name="SizeConstraint">0</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<token name="Style">0</token>
+								<BinaryString name="Tags"></BinaryString>
+								<string name="Text">Button</string>
+								<Color3 name="TextColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<bool name="TextScaled">false</bool>
+								<float name="TextSize">14</float>
+								<Color3 name="TextStrokeColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<float name="TextStrokeTransparency">1</float>
+								<float name="TextTransparency">1</float>
+								<token name="TextTruncate">0</token>
+								<bool name="TextWrapped">false</bool>
+								<token name="TextXAlignment">2</token>
+								<token name="TextYAlignment">1</token>
+								<bool name="Visible">true</bool>
+								<int name="ZIndex">1</int>
+							</Properties>
+							<Item class="UICorner" referent="RBX735AB3112CB2453587AB37B951886962">
+								<Properties>
+									<BinaryString name="AttributesSerialize"></BinaryString>
+									<UDim name="CornerRadius">
+										<S>0</S>
+										<O>3</O>
+									</UDim>
+									<string name="Name">UICorner</string>
+									<int64 name="SourceAssetId">-1</int64>
+									<BinaryString name="Tags"></BinaryString>
+								</Properties>
+							</Item>
+							<Item class="Frame" referent="RBX967ED25203F54B999DB0B07B5050CA04">
+								<Properties>
+									<bool name="Active">false</bool>
+									<Vector2 name="AnchorPoint">
+										<X>0.5</X>
+										<Y>0.5</Y>
+									</Vector2>
+									<BinaryString name="AttributesSerialize"></BinaryString>
+									<bool name="AutoLocalize">true</bool>
+									<token name="AutomaticSize">0</token>
+									<Color3 name="BackgroundColor3">
+										<R>1</R>
+										<G>1</G>
+										<B>1</B>
+									</Color3>
+									<float name="BackgroundTransparency">1</float>
+									<Color3 name="BorderColor3">
+										<R>0</R>
+										<G>0</G>
+										<B>0</B>
+									</Color3>
+									<token name="BorderMode">0</token>
+									<int name="BorderSizePixel">0</int>
+									<bool name="ClipsDescendants">false</bool>
+									<bool name="Draggable">false</bool>
+									<int name="LayoutOrder">0</int>
+									<string name="Name">Arrow</string>
+									<Ref name="NextSelectionDown">null</Ref>
+									<Ref name="NextSelectionLeft">null</Ref>
+									<Ref name="NextSelectionRight">null</Ref>
+									<Ref name="NextSelectionUp">null</Ref>
+									<UDim2 name="Position">
+										<XS>0.5</XS>
+										<XO>0</XO>
+										<YS>0.5</YS>
+										<YO>0</YO>
+									</UDim2>
+									<Ref name="RootLocalizationTable">null</Ref>
+									<float name="Rotation">0</float>
+									<bool name="Selectable">false</bool>
+									<Ref name="SelectionImageObject">null</Ref>
+									<UDim2 name="Size">
+										<XS>0</XS>
+										<XO>10</XO>
+										<YS>0</YS>
+										<YO>10</YO>
+									</UDim2>
+									<token name="SizeConstraint">0</token>
+									<int64 name="SourceAssetId">-1</int64>
+									<token name="Style">0</token>
+									<BinaryString name="Tags"></BinaryString>
+									<bool name="Visible">true</bool>
+									<int name="ZIndex">1</int>
+								</Properties>
+								<Item class="ImageLabel" referent="RBXC05D56999B7047ADB0E8C9A69954C9F4">
+									<Properties>
+										<bool name="Active">false</bool>
+										<Vector2 name="AnchorPoint">
+											<X>0.5</X>
+											<Y>0.5</Y>
+										</Vector2>
+										<BinaryString name="AttributesSerialize"></BinaryString>
+										<bool name="AutoLocalize">true</bool>
+										<token name="AutomaticSize">0</token>
+										<Color3 name="BackgroundColor3">
+											<R>1</R>
+											<G>1</G>
+											<B>1</B>
+										</Color3>
+										<float name="BackgroundTransparency">1</float>
+										<Color3 name="BorderColor3">
+											<R>0</R>
+											<G>0</G>
+											<B>0</B>
+										</Color3>
+										<token name="BorderMode">0</token>
+										<int name="BorderSizePixel">0</int>
+										<bool name="ClipsDescendants">false</bool>
+										<bool name="Draggable">false</bool>
+										<Content name="Image"><url>http://www.roblox.com/asset/?id=98501670111263</url></Content>
+										<Color3 name="ImageColor3">
+											<R>1</R>
+											<G>1</G>
+											<B>1</B>
+										</Color3>
+										<Vector2 name="ImageRectOffset">
+											<X>0</X>
+											<Y>0</Y>
+										</Vector2>
+										<Vector2 name="ImageRectSize">
+											<X>0</X>
+											<Y>0</Y>
+										</Vector2>
+										<float name="ImageTransparency">0</float>
+										<int name="LayoutOrder">0</int>
+										<string name="Name">ImageLabel</string>
+										<Ref name="NextSelectionDown">null</Ref>
+										<Ref name="NextSelectionLeft">null</Ref>
+										<Ref name="NextSelectionRight">null</Ref>
+										<Ref name="NextSelectionUp">null</Ref>
+										<UDim2 name="Position">
+											<XS>0.5</XS>
+											<XO>0</XO>
+											<YS>0.5</YS>
+											<YO>0</YO>
+										</UDim2>
+										<Ref name="RootLocalizationTable">null</Ref>
+										<float name="Rotation">0</float>
+										<token name="ScaleType">0</token>
+										<bool name="Selectable">false</bool>
+										<Ref name="SelectionImageObject">null</Ref>
+										<UDim2 name="Size">
+											<XS>1</XS>
+											<XO>0</XO>
+											<YS>1</YS>
+											<YO>0</YO>
+										</UDim2>
+										<token name="SizeConstraint">0</token>
+										<Rect2D name="SliceCenter">
+											<min>
+												<X>0</X>
+												<Y>0</Y>
+											</min>
+											<max>
+												<X>0</X>
+												<Y>0</Y>
+											</max>
+										</Rect2D>
+										<float name="SliceScale">1</float>
+										<int64 name="SourceAssetId">-1</int64>
+										<BinaryString name="Tags"></BinaryString>
+										<UDim2 name="TileSize">
+											<XS>1</XS>
+											<XO>0</XO>
+											<YS>1</YS>
+											<YO>0</YO>
+										</UDim2>
+										<bool name="Visible">true</bool>
+										<int name="ZIndex">1</int>
+									</Properties>
+								</Item>
+							</Item>
+						</Item>
+						<Item class="TextLabel" referent="RBX5BA4C4A5CFD5439CB5F9D74120B48AC2">
+							<Properties>
+								<bool name="Active">false</bool>
+								<Vector2 name="AnchorPoint">
+									<X>0.5</X>
+									<Y>0.5</Y>
+								</Vector2>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<bool name="AutoLocalize">true</bool>
+								<token name="AutomaticSize">3</token>
+								<Color3 name="BackgroundColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<float name="BackgroundTransparency">1</float>
+								<Color3 name="BorderColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<token name="BorderMode">0</token>
+								<int name="BorderSizePixel">0</int>
+								<bool name="ClipsDescendants">false</bool>
+								<bool name="Draggable">false</bool>
+								<token name="Font">0</token>
+								<int name="LayoutOrder">0</int>
+								<float name="LineHeight">1</float>
+								<string name="Name">Title</string>
+								<Ref name="NextSelectionDown">null</Ref>
+								<Ref name="NextSelectionLeft">null</Ref>
+								<Ref name="NextSelectionRight">null</Ref>
+								<Ref name="NextSelectionUp">null</Ref>
+								<UDim2 name="Position">
+									<XS>0.5</XS>
+									<XO>0</XO>
+									<YS>0.5</YS>
+									<YO>0</YO>
+								</UDim2>
+								<bool name="RichText">false</bool>
+								<Ref name="RootLocalizationTable">null</Ref>
+								<float name="Rotation">0</float>
+								<bool name="Selectable">false</bool>
+								<Ref name="SelectionImageObject">null</Ref>
+								<UDim2 name="Size">
+									<XS>0</XS>
+									<XO>0</XO>
+									<YS>0</YS>
+									<YO>0</YO>
+								</UDim2>
+								<token name="SizeConstraint">0</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+								<string name="Text">Category</string>
+								<Color3 name="TextColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<bool name="TextScaled">false</bool>
+								<float name="TextSize">20</float>
+								<Color3 name="TextStrokeColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<float name="TextStrokeTransparency">1</float>
+								<float name="TextTransparency">0</float>
+								<token name="TextTruncate">0</token>
+								<bool name="TextWrapped">false</bool>
+								<token name="TextXAlignment">2</token>
+								<token name="TextYAlignment">1</token>
+								<bool name="Visible">true</bool>
+								<int name="ZIndex">1</int>
+							</Properties>
+						</Item>
+						<Item class="UIListLayout" referent="RBX1450D529C99346D59F3B4F1DCCD6AA9C">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<token name="FillDirection">0</token>
+								<token name="HorizontalAlignment">0</token>
+								<string name="Name">UIListLayout</string>
+								<UDim name="Padding">
+									<S>0</S>
+									<O>3</O>
+								</UDim>
+								<token name="SortOrder">2</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+								<token name="VerticalAlignment">0</token>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="UIListLayout" referent="RBXECB906C7A0174806B2E1B7D40ECDA3A9">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<token name="FillDirection">1</token>
+							<token name="HorizontalAlignment">0</token>
+							<string name="Name">UIListLayout</string>
+							<UDim name="Padding">
+								<S>0</S>
+								<O>5</O>
+							</UDim>
+							<token name="SortOrder">2</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<token name="VerticalAlignment">1</token>
+						</Properties>
+					</Item>
+					<Item class="Frame" referent="RBX3C825F2E6C784CC182901A494937E15E">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">2</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<int name="LayoutOrder">0</int>
+							<string name="Name">Content</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<bool name="Visible">false</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="UIListLayout" referent="RBXDFC5C04DBE20406583E9793AD06AC5D2">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<token name="FillDirection">1</token>
+								<token name="HorizontalAlignment">0</token>
+								<string name="Name">UIListLayout</string>
+								<UDim name="Padding">
+									<S>0</S>
+									<O>5</O>
+								</UDim>
+								<token name="SortOrder">2</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+								<token name="VerticalAlignment">1</token>
+							</Properties>
+						</Item>
+					</Item>
+				</Item>
+				<Item class="Folder" referent="RBX198EEFEA8D4543E1BA373E8300F5F4E5">
+					<Properties>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<string name="Name">PromptPrefabs</string>
+						<int64 name="SourceAssetId">-1</int64>
+						<BinaryString name="Tags"></BinaryString>
+					</Properties>
+					<Item class="Frame" referent="RBXAEA8EA8E5BD6408A8752E08F62DB9A9A">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<int name="LayoutOrder">0</int>
+							<string name="Name">Toggle</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>30</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="TextLabel" referent="RBXF35BB63A14D44C30B73133C003D1FF33">
+							<Properties>
+								<bool name="Active">false</bool>
+								<Vector2 name="AnchorPoint">
+									<X>0</X>
+									<Y>0</Y>
+								</Vector2>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<bool name="AutoLocalize">true</bool>
+								<token name="AutomaticSize">0</token>
+								<Color3 name="BackgroundColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<float name="BackgroundTransparency">1</float>
+								<Color3 name="BorderColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<token name="BorderMode">0</token>
+								<int name="BorderSizePixel">0</int>
+								<bool name="ClipsDescendants">false</bool>
+								<bool name="Draggable">false</bool>
+								<token name="Font">0</token>
+								<int name="LayoutOrder">0</int>
+								<float name="LineHeight">1</float>
+								<string name="Name">Label</string>
+								<Ref name="NextSelectionDown">null</Ref>
+								<Ref name="NextSelectionLeft">null</Ref>
+								<Ref name="NextSelectionRight">null</Ref>
+								<Ref name="NextSelectionUp">null</Ref>
+								<UDim2 name="Position">
+									<XS>0</XS>
+									<XO>0</XO>
+									<YS>0</YS>
+									<YO>0</YO>
+								</UDim2>
+								<bool name="RichText">false</bool>
+								<Ref name="RootLocalizationTable">null</Ref>
+								<float name="Rotation">0</float>
+								<bool name="Selectable">false</bool>
+								<Ref name="SelectionImageObject">null</Ref>
+								<UDim2 name="Size">
+									<XS>1</XS>
+									<XO>0</XO>
+									<YS>0</YS>
+									<YO>30</YO>
+								</UDim2>
+								<token name="SizeConstraint">0</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+								<string name="Text">Toggle</string>
+								<Color3 name="TextColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<bool name="TextScaled">false</bool>
+								<float name="TextSize">25</float>
+								<Color3 name="TextStrokeColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<float name="TextStrokeTransparency">1</float>
+								<float name="TextTransparency">0</float>
+								<token name="TextTruncate">0</token>
+								<bool name="TextWrapped">false</bool>
+								<token name="TextXAlignment">0</token>
+								<token name="TextYAlignment">1</token>
+								<bool name="Visible">true</bool>
+								<int name="ZIndex">1</int>
+							</Properties>
+						</Item>
+						<Item class="UIListLayout" referent="RBX617C46EF627441798E9F53B859EE8B84">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<token name="FillDirection">0</token>
+								<token name="HorizontalAlignment">0</token>
+								<string name="Name">UIListLayout</string>
+								<UDim name="Padding">
+									<S>0</S>
+									<O>10</O>
+								</UDim>
+								<token name="SortOrder">2</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+								<token name="VerticalAlignment">1</token>
+							</Properties>
+						</Item>
+						<Item class="TextButton" referent="RBX8DFC6186916844789CECCD025B875DA8">
+							<Properties>
+								<bool name="Active">true</bool>
+								<Vector2 name="AnchorPoint">
+									<X>0</X>
+									<Y>0</Y>
+								</Vector2>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<bool name="AutoButtonColor">true</bool>
+								<bool name="AutoLocalize">true</bool>
+								<token name="AutomaticSize">0</token>
+								<Color3 name="BackgroundColor3">
+									<R>0.392156869</R>
+									<G>0.392156869</G>
+									<B>0.392156869</B>
+								</Color3>
+								<float name="BackgroundTransparency">0</float>
+								<Color3 name="BorderColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<token name="BorderMode">0</token>
+								<int name="BorderSizePixel">0</int>
+								<bool name="ClipsDescendants">false</bool>
+								<bool name="Draggable">false</bool>
+								<token name="Font">0</token>
+								<int name="LayoutOrder">0</int>
+								<float name="LineHeight">1</float>
+								<bool name="Modal">false</bool>
+								<string name="Name">ToggleButton</string>
+								<Ref name="NextSelectionDown">null</Ref>
+								<Ref name="NextSelectionLeft">null</Ref>
+								<Ref name="NextSelectionRight">null</Ref>
+								<Ref name="NextSelectionUp">null</Ref>
+								<UDim2 name="Position">
+									<XS>0</XS>
+									<XO>0</XO>
+									<YS>0</YS>
+									<YO>0</YO>
+								</UDim2>
+								<bool name="RichText">false</bool>
+								<Ref name="RootLocalizationTable">null</Ref>
+								<float name="Rotation">0</float>
+								<bool name="Selectable">true</bool>
+								<bool name="Selected">false</bool>
+								<Ref name="SelectionImageObject">null</Ref>
+								<UDim2 name="Size">
+									<XS>0</XS>
+									<XO>30</XO>
+									<YS>0</YS>
+									<YO>30</YO>
+								</UDim2>
+								<token name="SizeConstraint">0</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<token name="Style">0</token>
+								<BinaryString name="Tags"></BinaryString>
+								<string name="Text"></string>
+								<Color3 name="TextColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<bool name="TextScaled">false</bool>
+								<float name="TextSize">25</float>
+								<Color3 name="TextStrokeColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<float name="TextStrokeTransparency">1</float>
+								<float name="TextTransparency">0</float>
+								<token name="TextTruncate">0</token>
+								<bool name="TextWrapped">false</bool>
+								<token name="TextXAlignment">2</token>
+								<token name="TextYAlignment">1</token>
+								<bool name="Visible">true</bool>
+								<int name="ZIndex">1</int>
+							</Properties>
+							<Item class="UICorner" referent="RBX4411171A5420442C8D37DE64AA9811CA">
+								<Properties>
+									<BinaryString name="AttributesSerialize"></BinaryString>
+									<UDim name="CornerRadius">
+										<S>0</S>
+										<O>8</O>
+									</UDim>
+									<string name="Name">UICorner</string>
+									<int64 name="SourceAssetId">-1</int64>
+									<BinaryString name="Tags"></BinaryString>
+								</Properties>
+							</Item>
+							<Item class="Frame" referent="RBX3CA3809225424663A859E182D488789E">
+								<Properties>
+									<bool name="Active">false</bool>
+									<Vector2 name="AnchorPoint">
+										<X>0.5</X>
+										<Y>0.5</Y>
+									</Vector2>
+									<BinaryString name="AttributesSerialize"></BinaryString>
+									<bool name="AutoLocalize">true</bool>
+									<token name="AutomaticSize">0</token>
+									<Color3 name="BackgroundColor3">
+										<R>1</R>
+										<G>1</G>
+										<B>1</B>
+									</Color3>
+									<float name="BackgroundTransparency">0</float>
+									<Color3 name="BorderColor3">
+										<R>0</R>
+										<G>0</G>
+										<B>0</B>
+									</Color3>
+									<token name="BorderMode">0</token>
+									<int name="BorderSizePixel">0</int>
+									<bool name="ClipsDescendants">false</bool>
+									<bool name="Draggable">false</bool>
+									<int name="LayoutOrder">0</int>
+									<string name="Name">Check</string>
+									<Ref name="NextSelectionDown">null</Ref>
+									<Ref name="NextSelectionLeft">null</Ref>
+									<Ref name="NextSelectionRight">null</Ref>
+									<Ref name="NextSelectionUp">null</Ref>
+									<UDim2 name="Position">
+										<XS>0.5</XS>
+										<XO>0</XO>
+										<YS>0.5</YS>
+										<YO>0</YO>
+									</UDim2>
+									<Ref name="RootLocalizationTable">null</Ref>
+									<float name="Rotation">0</float>
+									<bool name="Selectable">false</bool>
+									<Ref name="SelectionImageObject">null</Ref>
+									<UDim2 name="Size">
+										<XS>1</XS>
+										<XO>-10</XO>
+										<YS>1</YS>
+										<YO>-10</YO>
+									</UDim2>
+									<token name="SizeConstraint">0</token>
+									<int64 name="SourceAssetId">-1</int64>
+									<token name="Style">0</token>
+									<BinaryString name="Tags"></BinaryString>
+									<bool name="Visible">true</bool>
+									<int name="ZIndex">1</int>
+								</Properties>
+								<Item class="UICorner" referent="RBXCA62A58B6F864BA8915A4CB696917503">
+									<Properties>
+										<BinaryString name="AttributesSerialize"></BinaryString>
+										<UDim name="CornerRadius">
+											<S>0</S>
+											<O>5</O>
+										</UDim>
+										<string name="Name">UICorner</string>
+										<int64 name="SourceAssetId">-1</int64>
+										<BinaryString name="Tags"></BinaryString>
+									</Properties>
+								</Item>
+							</Item>
+						</Item>
+					</Item>
+					<Item class="TextButton" referent="RBXFB9E3B06E8B34266B1F8A426F2D77203">
+						<Properties>
+							<bool name="Active">true</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoButtonColor">true</bool>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>0.392156869</R>
+								<G>0.392156869</G>
+								<B>0.392156869</B>
+							</Color3>
+							<float name="BackgroundTransparency">0</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<token name="Font">0</token>
+							<int name="LayoutOrder">0</int>
+							<float name="LineHeight">1</float>
+							<bool name="Modal">false</bool>
+							<string name="Name">Button</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="RichText">false</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">true</bool>
+							<bool name="Selected">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>40</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<string name="Text">Button</string>
+							<Color3 name="TextColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<bool name="TextScaled">false</bool>
+							<float name="TextSize">25</float>
+							<Color3 name="TextStrokeColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">false</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="UICorner" referent="RBX1C7D7B5C9A02488D94FE0737D47105FF">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<UDim name="CornerRadius">
+									<S>0</S>
+									<O>8</O>
+								</UDim>
+								<string name="Name">UICorner</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="TextLabel" referent="RBX9F02AC9F1EB84645975C6BD180EEF5A2">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<token name="Font">0</token>
+							<int name="LayoutOrder">0</int>
+							<float name="LineHeight">1</float>
+							<string name="Name">Label</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="RichText">false</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>30</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<string name="Text">Label</string>
+							<Color3 name="TextColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<bool name="TextScaled">false</bool>
+							<float name="TextSize">25</float>
+							<Color3 name="TextStrokeColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">false</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+					</Item>
+					<Item class="ImageLabel" referent="RBXCF9878BB3B734F53B215A1618DE9726B">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>0.313725501</R>
+								<G>0.313725501</G>
+								<B>0.313725501</B>
+							</Color3>
+							<float name="BackgroundTransparency">0</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">true</bool>
+							<bool name="Draggable">false</bool>
+							<Content name="Image"><null></null></Content>
+							<Color3 name="ImageColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<Vector2 name="ImageRectOffset">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<Vector2 name="ImageRectSize">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<float name="ImageTransparency">0</float>
+							<int name="LayoutOrder">0</int>
+							<string name="Name">UVDisplay</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<token name="ScaleType">0</token>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">1</token>
+							<Rect2D name="SliceCenter">
+								<min>
+									<X>0</X>
+									<Y>0</Y>
+								</min>
+								<max>
+									<X>0</X>
+									<Y>0</Y>
+								</max>
+							</Rect2D>
+							<float name="SliceScale">1</float>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<UDim2 name="TileSize">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="Configuration" referent="RBX2E803F737D144B448FDA32BF86B4236D">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<string name="Name">Configuration</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+							<Item class="Frame" referent="RBX72756A4040C649DD9DBE0F2EF2FA0918">
+								<Properties>
+									<bool name="Active">false</bool>
+									<Vector2 name="AnchorPoint">
+										<X>0.5</X>
+										<Y>0.5</Y>
+									</Vector2>
+									<BinaryString name="AttributesSerialize"></BinaryString>
+									<bool name="AutoLocalize">true</bool>
+									<token name="AutomaticSize">0</token>
+									<Color3 name="BackgroundColor3">
+										<R>1</R>
+										<G>1</G>
+										<B>1</B>
+									</Color3>
+									<float name="BackgroundTransparency">0</float>
+									<Color3 name="BorderColor3">
+										<R>0</R>
+										<G>0</G>
+										<B>0</B>
+									</Color3>
+									<token name="BorderMode">0</token>
+									<int name="BorderSizePixel">0</int>
+									<bool name="ClipsDescendants">false</bool>
+									<bool name="Draggable">false</bool>
+									<int name="LayoutOrder">0</int>
+									<string name="Name">UV</string>
+									<Ref name="NextSelectionDown">null</Ref>
+									<Ref name="NextSelectionLeft">null</Ref>
+									<Ref name="NextSelectionRight">null</Ref>
+									<Ref name="NextSelectionUp">null</Ref>
+									<UDim2 name="Position">
+										<XS>0</XS>
+										<XO>0</XO>
+										<YS>0</YS>
+										<YO>0</YO>
+									</UDim2>
+									<Ref name="RootLocalizationTable">null</Ref>
+									<float name="Rotation">0</float>
+									<bool name="Selectable">false</bool>
+									<Ref name="SelectionImageObject">null</Ref>
+									<UDim2 name="Size">
+										<XS>0</XS>
+										<XO>2</XO>
+										<YS>0</YS>
+										<YO>2</YO>
+									</UDim2>
+									<token name="SizeConstraint">0</token>
+									<int64 name="SourceAssetId">-1</int64>
+									<token name="Style">0</token>
+									<BinaryString name="Tags"></BinaryString>
+									<bool name="Visible">true</bool>
+									<int name="ZIndex">1</int>
+								</Properties>
+								<Item class="UICorner" referent="RBXD4FFCEF6D8FF4E09BAD06F7C4F8D5E50">
+									<Properties>
+										<BinaryString name="AttributesSerialize"></BinaryString>
+										<UDim name="CornerRadius">
+											<S>1</S>
+											<O>0</O>
+										</UDim>
+										<string name="Name">UICorner</string>
+										<int64 name="SourceAssetId">-1</int64>
+										<BinaryString name="Tags"></BinaryString>
+									</Properties>
+								</Item>
+							</Item>
+						</Item>
+						<Item class="ImageLabel" referent="RBX2B55837C43934662810BDEB05823B267">
+							<Properties>
+								<bool name="Active">false</bool>
+								<Vector2 name="AnchorPoint">
+									<X>0.5</X>
+									<Y>0.5</Y>
+								</Vector2>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<bool name="AutoLocalize">true</bool>
+								<token name="AutomaticSize">0</token>
+								<Color3 name="BackgroundColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<float name="BackgroundTransparency">1</float>
+								<Color3 name="BorderColor3">
+									<R>0</R>
+									<G>0</G>
+									<B>0</B>
+								</Color3>
+								<token name="BorderMode">0</token>
+								<int name="BorderSizePixel">0</int>
+								<bool name="ClipsDescendants">false</bool>
+								<bool name="Draggable">false</bool>
+								<Content name="Image"><null></null></Content>
+								<Color3 name="ImageColor3">
+									<R>1</R>
+									<G>1</G>
+									<B>1</B>
+								</Color3>
+								<Vector2 name="ImageRectOffset">
+									<X>0</X>
+									<Y>0</Y>
+								</Vector2>
+								<Vector2 name="ImageRectSize">
+									<X>0</X>
+									<Y>0</Y>
+								</Vector2>
+								<float name="ImageTransparency">0</float>
+								<int name="LayoutOrder">0</int>
+								<string name="Name">UVs</string>
+								<Ref name="NextSelectionDown">null</Ref>
+								<Ref name="NextSelectionLeft">null</Ref>
+								<Ref name="NextSelectionRight">null</Ref>
+								<Ref name="NextSelectionUp">null</Ref>
+								<UDim2 name="Position">
+									<XS>0.5</XS>
+									<XO>0</XO>
+									<YS>0.5</YS>
+									<YO>0</YO>
+								</UDim2>
+								<Ref name="RootLocalizationTable">null</Ref>
+								<float name="Rotation">0</float>
+								<token name="ScaleType">0</token>
+								<bool name="Selectable">false</bool>
+								<Ref name="SelectionImageObject">null</Ref>
+								<UDim2 name="Size">
+									<XS>1</XS>
+									<XO>0</XO>
+									<YS>1</YS>
+									<YO>0</YO>
+								</UDim2>
+								<token name="SizeConstraint">0</token>
+								<Rect2D name="SliceCenter">
+									<min>
+										<X>0</X>
+										<Y>0</Y>
+									</min>
+									<max>
+										<X>0</X>
+										<Y>0</Y>
+									</max>
+								</Rect2D>
+								<float name="SliceScale">1</float>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+								<UDim2 name="TileSize">
+									<XS>1</XS>
+									<XO>0</XO>
+									<YS>1</YS>
+									<YO>0</YO>
+								</UDim2>
+								<bool name="Visible">true</bool>
+								<int name="ZIndex">1</int>
+							</Properties>
+						</Item>
+					</Item>
+				</Item>
+				<Item class="Frame" referent="RBX916E9B68F7A246A7BD88CC782FFE8988">
+					<Properties>
+						<bool name="Active">false</bool>
+						<Vector2 name="AnchorPoint">
+							<X>0.5</X>
+							<Y>0.5</Y>
+						</Vector2>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<bool name="AutoLocalize">true</bool>
+						<token name="AutomaticSize">2</token>
+						<Color3 name="BackgroundColor3">
+							<R>0.196078435</R>
+							<G>0.196078435</G>
+							<B>0.196078435</B>
+						</Color3>
+						<float name="BackgroundTransparency">0</float>
+						<Color3 name="BorderColor3">
+							<R>0</R>
+							<G>0</G>
+							<B>0</B>
+						</Color3>
+						<token name="BorderMode">0</token>
+						<int name="BorderSizePixel">0</int>
+						<bool name="ClipsDescendants">false</bool>
+						<bool name="Draggable">false</bool>
+						<int name="LayoutOrder">0</int>
+						<string name="Name">Prompt</string>
+						<Ref name="NextSelectionDown">null</Ref>
+						<Ref name="NextSelectionLeft">null</Ref>
+						<Ref name="NextSelectionRight">null</Ref>
+						<Ref name="NextSelectionUp">null</Ref>
+						<UDim2 name="Position">
+							<XS>0.5</XS>
+							<XO>0</XO>
+							<YS>0.5</YS>
+							<YO>0</YO>
+						</UDim2>
+						<Ref name="RootLocalizationTable">null</Ref>
+						<float name="Rotation">0</float>
+						<bool name="Selectable">false</bool>
+						<Ref name="SelectionImageObject">null</Ref>
+						<UDim2 name="Size">
+							<XS>0</XS>
+							<XO>300</XO>
+							<YS>0</YS>
+							<YO>0</YO>
+						</UDim2>
+						<token name="SizeConstraint">0</token>
+						<int64 name="SourceAssetId">-1</int64>
+						<token name="Style">0</token>
+						<BinaryString name="Tags"></BinaryString>
+						<bool name="Visible">true</bool>
+						<int name="ZIndex">1</int>
+					</Properties>
+					<Item class="Frame" referent="RBXE5C0F384D9C4469984A134EF63D0243D">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0.5</X>
+								<Y>0.5</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>0.392156869</R>
+								<G>0.392156869</G>
+								<B>0.392156869</B>
+							</Color3>
+							<float name="BackgroundTransparency">0</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<int name="LayoutOrder">0</int>
+							<string name="Name">Drag</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>-20</XO>
+								<YS>0</YS>
+								<YO>7</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="UICorner" referent="RBX7FE8202B8B00470A96F4C1FBBC450698">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<UDim name="CornerRadius">
+									<S>0</S>
+									<O>8</O>
+								</UDim>
+								<string name="Name">UICorner</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="UIListLayout" referent="RBX9FAFA469DD4849A4B7E233053F985097">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<token name="FillDirection">1</token>
+							<token name="HorizontalAlignment">0</token>
+							<string name="Name">UIListLayout</string>
+							<UDim name="Padding">
+								<S>0</S>
+								<O>10</O>
+							</UDim>
+							<token name="SortOrder">2</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<token name="VerticalAlignment">1</token>
+						</Properties>
+					</Item>
+					<Item class="Frame" referent="RBX0FA417DD53E54D07AC4410FD2C00531D">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">2</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<int name="LayoutOrder">1</int>
+							<string name="Name">Content</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>0</YS>
+								<YO>0</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<token name="Style">0</token>
+							<BinaryString name="Tags"></BinaryString>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="UIListLayout" referent="RBX822C85161460495683C5B5CA957D5C38">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<token name="FillDirection">1</token>
+								<token name="HorizontalAlignment">0</token>
+								<string name="Name">UIListLayout</string>
+								<UDim name="Padding">
+									<S>0</S>
+									<O>10</O>
+								</UDim>
+								<token name="SortOrder">2</token>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+								<token name="VerticalAlignment">1</token>
+							</Properties>
+						</Item>
+					</Item>
+					<Item class="UICorner" referent="RBX7BCF9EB2BAE54688A3E6444FA998E4C2">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<UDim name="CornerRadius">
+								<S>0</S>
+								<O>16</O>
+							</UDim>
+							<string name="Name">UICorner</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+					<Item class="UIPadding" referent="RBXEBC1E15B02D1412B847D8E65C41A9B59">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<string name="Name">UIPadding</string>
+							<UDim name="PaddingBottom">
+								<S>0</S>
+								<O>10</O>
+							</UDim>
+							<UDim name="PaddingLeft">
+								<S>0</S>
+								<O>10</O>
+							</UDim>
+							<UDim name="PaddingRight">
+								<S>0</S>
+								<O>10</O>
+							</UDim>
+							<UDim name="PaddingTop">
+								<S>0</S>
+								<O>10</O>
+							</UDim>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+					<Item class="UIScale" referent="RBXB2E63C5245D24E00A29A87B1C09CE56E">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<string name="Name">UIScale</string>
+							<float name="Scale">1</float>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+				</Item>
+				<Item class="Frame" referent="RBXDCCB8211D1E146B8842DE58AE13666F0">
+					<Properties>
+						<bool name="Active">true</bool>
+						<Vector2 name="AnchorPoint">
+							<X>0</X>
+							<Y>0</Y>
+						</Vector2>
+						<BinaryString name="AttributesSerialize"></BinaryString>
+						<bool name="AutoLocalize">true</bool>
+						<token name="AutomaticSize">0</token>
+						<Color3 name="BackgroundColor3">
+							<R>0.313725501</R>
+							<G>0.313725501</G>
+							<B>0.313725501</B>
+						</Color3>
+						<float name="BackgroundTransparency">0</float>
+						<Color3 name="BorderColor3">
+							<R>0</R>
+							<G>0</G>
+							<B>0</B>
+						</Color3>
+						<token name="BorderMode">0</token>
+						<int name="BorderSizePixel">0</int>
+						<bool name="ClipsDescendants">false</bool>
+						<bool name="Draggable">false</bool>
+						<int name="LayoutOrder">0</int>
+						<string name="Name">Tool</string>
+						<Ref name="NextSelectionDown">null</Ref>
+						<Ref name="NextSelectionLeft">null</Ref>
+						<Ref name="NextSelectionRight">null</Ref>
+						<Ref name="NextSelectionUp">null</Ref>
+						<UDim2 name="Position">
+							<XS>0</XS>
+							<XO>0</XO>
+							<YS>0</YS>
+							<YO>0</YO>
+						</UDim2>
+						<Ref name="RootLocalizationTable">null</Ref>
+						<float name="Rotation">0</float>
+						<bool name="Selectable">false</bool>
+						<Ref name="SelectionImageObject">null</Ref>
+						<UDim2 name="Size">
+							<XS>0</XS>
+							<XO>80</XO>
+							<YS>0</YS>
+							<YO>80</YO>
+						</UDim2>
+						<token name="SizeConstraint">0</token>
+						<int64 name="SourceAssetId">-1</int64>
+						<token name="Style">0</token>
+						<BinaryString name="Tags"></BinaryString>
+						<bool name="Visible">true</bool>
+						<int name="ZIndex">1</int>
+					</Properties>
+					<Item class="UICorner" referent="RBXFCBA3B062FDD4B538DADC7AEE12EAA17">
+						<Properties>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<UDim name="CornerRadius">
+								<S>0</S>
+								<O>8</O>
+							</UDim>
+							<string name="Name">UICorner</string>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+						</Properties>
+					</Item>
+					<Item class="ImageLabel" referent="RBXA54770FA0DD444BAB2702E02641C5B2C">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0.5</X>
+								<Y>0.5</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">0</token>
+							<Color3 name="BackgroundColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<float name="BackgroundTransparency">1</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<Content name="Image"><url>rbxassetid://120643548451843</url></Content>
+							<Color3 name="ImageColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<Vector2 name="ImageRectOffset">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<Vector2 name="ImageRectSize">
+								<X>0</X>
+								<Y>0</Y>
+							</Vector2>
+							<float name="ImageTransparency">0</float>
+							<int name="LayoutOrder">0</int>
+							<string name="Name">Icon</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>0.5</XS>
+								<XO>0</XO>
+								<YS>0.5</YS>
+								<YO>0</YO>
+							</UDim2>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<token name="ScaleType">0</token>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>1</XS>
+								<XO>-5</XO>
+								<YS>1</YS>
+								<YO>-5</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<Rect2D name="SliceCenter">
+								<min>
+									<X>0</X>
+									<Y>0</Y>
+								</min>
+								<max>
+									<X>0</X>
+									<Y>0</Y>
+								</max>
+							</Rect2D>
+							<float name="SliceScale">1</float>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<UDim2 name="TileSize">
+								<XS>1</XS>
+								<XO>0</XO>
+								<YS>1</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="Visible">true</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+					</Item>
+					<Item class="TextLabel" referent="RBX05A5D6A72D7347A69A25C00B585624A2">
+						<Properties>
+							<bool name="Active">false</bool>
+							<Vector2 name="AnchorPoint">
+								<X>0</X>
+								<Y>0.5</Y>
+							</Vector2>
+							<BinaryString name="AttributesSerialize"></BinaryString>
+							<bool name="AutoLocalize">true</bool>
+							<token name="AutomaticSize">1</token>
+							<Color3 name="BackgroundColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="BackgroundTransparency">0.5</float>
+							<Color3 name="BorderColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<token name="BorderMode">0</token>
+							<int name="BorderSizePixel">0</int>
+							<bool name="ClipsDescendants">false</bool>
+							<bool name="Draggable">false</bool>
+							<token name="Font">0</token>
+							<int name="LayoutOrder">0</int>
+							<float name="LineHeight">1</float>
+							<string name="Name">Tooltip</string>
+							<Ref name="NextSelectionDown">null</Ref>
+							<Ref name="NextSelectionLeft">null</Ref>
+							<Ref name="NextSelectionRight">null</Ref>
+							<Ref name="NextSelectionUp">null</Ref>
+							<UDim2 name="Position">
+								<XS>1</XS>
+								<XO>20</XO>
+								<YS>0.5</YS>
+								<YO>0</YO>
+							</UDim2>
+							<bool name="RichText">false</bool>
+							<Ref name="RootLocalizationTable">null</Ref>
+							<float name="Rotation">0</float>
+							<bool name="Selectable">false</bool>
+							<Ref name="SelectionImageObject">null</Ref>
+							<UDim2 name="Size">
+								<XS>0</XS>
+								<XO>10</XO>
+								<YS>0</YS>
+								<YO>30</YO>
+							</UDim2>
+							<token name="SizeConstraint">0</token>
+							<int64 name="SourceAssetId">-1</int64>
+							<BinaryString name="Tags"></BinaryString>
+							<string name="Text">View Collision Geometry</string>
+							<Color3 name="TextColor3">
+								<R>1</R>
+								<G>1</G>
+								<B>1</B>
+							</Color3>
+							<bool name="TextScaled">false</bool>
+							<float name="TextSize">20</float>
+							<Color3 name="TextStrokeColor3">
+								<R>0</R>
+								<G>0</G>
+								<B>0</B>
+							</Color3>
+							<float name="TextStrokeTransparency">1</float>
+							<float name="TextTransparency">0</float>
+							<token name="TextTruncate">0</token>
+							<bool name="TextWrapped">false</bool>
+							<token name="TextXAlignment">2</token>
+							<token name="TextYAlignment">1</token>
+							<bool name="Visible">false</bool>
+							<int name="ZIndex">1</int>
+						</Properties>
+						<Item class="UICorner" referent="RBX0BF8C6769B994376B83A76A71C8089D2">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<UDim name="CornerRadius">
+									<S>0</S>
+									<O>8</O>
+								</UDim>
+								<string name="Name">UICorner</string>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+						<Item class="UIPadding" referent="RBXBC378028AFDA4F04A79BFA3664A1DB45">
+							<Properties>
+								<BinaryString name="AttributesSerialize"></BinaryString>
+								<string name="Name">UIPadding</string>
+								<UDim name="PaddingBottom">
+									<S>0</S>
+									<O>0</O>
+								</UDim>
+								<UDim name="PaddingLeft">
+									<S>0</S>
+									<O>10</O>
+								</UDim>
+								<UDim name="PaddingRight">
+									<S>0</S>
+									<O>10</O>
+								</UDim>
+								<UDim name="PaddingTop">
+									<S>0</S>
+									<O>0</O>
+								</UDim>
+								<int64 name="SourceAssetId">-1</int64>
+								<BinaryString name="Tags"></BinaryString>
+							</Properties>
+						</Item>
+					</Item>
+				</Item>
+			</Item>
+		</Item>
+	</Item>
+</roblox>
