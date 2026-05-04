@@ -1,4 +1,4 @@
-I have attached a file [`FE2-Uncopylocked-2-0.rbxl`](./FE2-Uncopylocked-2-0.zip), which were sent to me from [a GitHub issue](https://github.com/Windows81/Roblox-Freedom-Distribution/issues/136#issuecomment-3988220711) then serialised using Rōblox Freedom Distribution's `serialise` command.
+I have attached a file [`FE2-Uncopylocked-2-0.rbxl`](./FE2-Uncopylocked-2-0.zip), which was sent to me from [a GitHub issue](https://github.com/Windows81/Roblox-Freedom-Distribution/issues/136#issuecomment-3988220711) then serialised using Rōblox Freedom Distribution's `serialise` command.
 
 ![](image.png)
 
@@ -8,7 +8,7 @@ However, Studio failed to open the place because error message `"Attachments mus
 
 I am including this patch in RFD because, as of December 2025, Attachments no longer have this parenting restriction in modern versions of Studio.
 
-After implementing this patch, the place appears to loaded correctly. There are indeed `Attachment` objects parented to places that shouldn't be having them.
+After implementing this patch, the place appears to have loaded correctly. There are indeed `Attachment` objects parented to places that shouldn't be having them.
 
 I implemented patches in Studio, Player, _and_ RCC to skip the function block which references `"Attachments must be parented to a PartInstance."`.
 

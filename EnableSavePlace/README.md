@@ -1,6 +1,6 @@
-# How I'm getting `game:SavePlace()` to work [2016+]
+# How I got `game:SavePlace()` to work [2016+]
 
-2021E (v463) patching. Replace `jne` to `jmp`.
+Per the image below, replace `jne` to `jmp`.
 Notice that `[esi]:"https://localhost:2006/ide/publish/UploadExistingAsset?assetId=1818&isAppCreation=true"`
 
 ![](image.png)

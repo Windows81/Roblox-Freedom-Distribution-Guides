@@ -1,12 +1,14 @@
 # Bypassing Video Limits in Rōblox v463
 
-As of Rōblox v463, videos are limited to a resolution of 1280x720 by default. Also, you could only play two videos at a time. I went ahead and fixed these issues.
+As of Rōblox v463, videos are limited to a resolution of 1280x720 by default. Also, for concurrency, Rōblox limits clients to two simultaneous videos. I went ahead and fixed these issues.
 
-In Rōblox version 463, you can apply the `v463-*.1337` files as patches in x32dbg.
-
-Only `.webm` containers are supported in v463. Use FFmpeg or something if you couldn't bring one of these containers with you.
+**Only `.webm` containers are supported in v463.** Use FFmpeg or something if you couldn't bring one of these containers with you.
 
 ## Quick Guide
+
+This guide walks you through freeing Rōblox v463 from the limitations specified above.
+
+In Rōblox version 463, you can simply apply the `v463-player.1337` and `v463-studio.1337` files as patches in x96dbg.
 
 ### Resolution Limits
 
@@ -59,11 +61,11 @@ In Studio v463:
 000000014130B1A0 | C3                       | ret                                     |
 ```
 
-Firstly, we are targeting the string `"Video is using a resolution that is not supported."`; that error string gets printed if a video exceeds a set resolution limit of 720p.
+First, we are targeting the string `"Video is using a resolution that is not supported."`; that error string gets printed if a video exceeds a set resolution limit of 720p.
 
-Note that multiple conditional jumps converge upon `{A0}` as shown above. I've thus labelled them `{A1}` thru `{A4}`. This is because multiple conditions are checked. If none of them make branch, we make an unconditional jump at `{B}`.
+Note that multiple conditional jumps converge upon `{A0}` as shown above. I've thus labelled them `{A1}` thru `{A4}`. This is because multiple conditions are checked. If none of them take the branch, we make an unconditional jump at `{B}`.
 
-Let's fill these jumps, along with their respective comparisons, with `nop`. This means every instruction between `{R1}` and `{R2}`, inclusive.
+Let's fill these jumps and their associated comparisons with `nop`. This means every instruction between `{R1}` and `{R2}`, inclusive.
 
 ### Concurrency Limits
 
@@ -72,10 +74,10 @@ By default, Rōblox only allows clients to play two videos simultaneously. Let's
 There is one user-string reference to `"At most %d videos can play simultaneously."`, which we can bypass by making unconditional the preceding jump statement.
 
 ```patch
-0000000141265F62 | E8 D910CEFF              | call    robloxstudiobeta.140F47040      |
-0000000141265F67 | 84C0                     | test    al, al                          |
-- 0000000141265F69 | 75 27                    | jne     robloxstudiobeta.141265F92      |
-+ 0000000141265F69 | EB 27                    | jmp     robloxstudiobeta.141265F92      |
-0000000141265F6B | 44:8B05 021EEB01         | mov     r8d, dword ptr ds:[0x143117D74] |
-0000000141265F72 | 48:8D15 B7CD5401         | lea     rdx, qword ptr ds:[0x1427B2D30] | 00000001427B2D30:"At most %d videos can play simultaneously."
+ 0000000141265F62 | E8 D910CEFF              | call    robloxstudiobeta.140F47040      |
+ 0000000141265F67 | 84C0                     | test    al, al                          |
+-0000000141265F69 | 75 27                    | jne     robloxstudiobeta.141265F92      |
++0000000141265F69 | EB 27                    | jmp     robloxstudiobeta.141265F92      |
+ 0000000141265F6B | 44:8B05 021EEB01         | mov     r8d, dword ptr ds:[0x143117D74] |
+ 0000000141265F72 | 48:8D15 B7CD5401         | lea     rdx, qword ptr ds:[0x1427B2D30] | 00000001427B2D30:"At most %d videos can play simultaneously."
 ```
