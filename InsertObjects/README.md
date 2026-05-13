@@ -142,4 +142,6 @@ InsertObjectMenuFactory *__fastcall InsertObjectMenuFactory::InsertObjectMenuFac
 }
 ```
 
-Per the snippet, it appears that the lamda in question gets called when `ILoginManager::loginSuccess` gets invoked. The invokation never occurs since [a previous patch was made](../StudioLogin/) so that Studio never registers that a user is logged in.
+Per the snippet above, it appears that the lambda function in question gets called when `ILoginManager::loginSuccess` gets invoked. The invokation never occurs since [a previous patch was made](../StudioLogin/) which suppresses much activity from `ILoginManager::loginSuccess`.
+
+Studio
