@@ -194,7 +194,7 @@ flowchart TB
     2.5 --> C
     C --> J
     J -- "eax == 0 (success)" --> C2
-    J -- "eax != 0 &amp;&amp; edi == 0<br>(fail, non-AppData dir)" --> B2
+    J -- "eax != 0 &amp;&amp; edi != 0<br>(fail, non-AppData dir)" --> B2
     J -- "eax != 0 &amp;&amp; edi == 0<br>(fail, AppData dir)" --> C0
     C0 --> B2
     B2 -- jump not taken (fail) --> C2
@@ -421,9 +421,9 @@ loop l1
 xor rbx,rbx
 test r15,r15
 cmove r15,rdi
-movzx ecx,byte ptr ds:[r15+rbx]
+mov cl,byte ptr ds:[r15+rbx]
 mov word ptr ds:[rdi+rbx*2],cx
 inc ebx
 inc ecx
-loop 141B65D25
+loop l3
 ```
