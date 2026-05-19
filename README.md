@@ -27,7 +27,7 @@ The best items contain "quick guides", along with a primer on additional finding
 | [Discriminate RCC Logs](./DiscriminateRCCLogs)                                          | True        | 0.9     |
 | [Extract Core Roblox Assets](./ExtractRobloxCoreAssets)                                 | True        | 0.7     |
 | [Bypass Video Limits](./BypassVideoLimits)                                              | True        | 1.0     |
-| [Insert Objects](./InsertObjects/)                                                      | False       | 0.3     |
+| [Insert Objects for 2021E](./InsertObjects2021E)                                        | True        | 0.8     |
 | [Make Asset URLs Permissive](./MakeAssetURLsPermissive)                                 | False       | 0.3     |
 | [Allow Multiple Simultaneous Clients](./AllowMultipleClients)                           | True        | 0.5     |
 | [Fix Occasional Client Crashes](./FixOccasionalClientCrashes)                           | True        | 1.0     |
