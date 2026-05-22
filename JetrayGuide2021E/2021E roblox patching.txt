@@ -1,0 +1,73 @@
+
+You will need atleast SOME basic patching knowledge too follow this through.
+
+
+How to patch 2021E roblox.
+
+Step 1: get the proper tools.
+
+If you do not have x32dbg, download it now.
+
+Download HXD as well.
+
+Lastly, download stud_pe
+
+step 2: patching the client.
+
+The client is fairly easy, in appsettings.txt change http://www.roblox.com to http://localhost/.test (HAS TO BE LOCALHOST, BECAUSE LOCALHOST BYPASSES SSL.)
+
+Next open up x32dbg then drag the client in.
+
+Go to symbols, RobloxPlayerBeta.exe then once it loads click the right arrow, which is at the top left of the screen. Be sure too click that twice (clicking the arrow gets around vmprotect).
+
+Now right click anywhere on code > Search for > Current Module > string references.
+
+Search for "trust check failed".
+
+Click on each result one by one, find the je or jne above it. Click on the je or jne, then click the spacebar, and then change it to jmp and click enter.
+
+Search for "127.0.0.1", go through each result and find the one that has a je above it and a "push D188" under the je. turn the je to jmp, and if theres another "127.0.0.1" under a je or jne above that,
+also jmp that.
+
+Create a folder called clientsettings in the same folder as the player. In that folder make a file called ClientAppSettings.json, and change it too the contents of this file: https://www.mediafire.com/file/ktli6i6dkcxf1u4/ClientAppSettings.json/file
+
+Change ssl/cacert.pem file too this file: https://www.mediafire.com/file/ytfj51sxsmbws0v/cacert.pem/file
+
+download these two dlls: https://www.mediafire.com/file/jbimz51b6a5jgeu/Player.7z/file, then extract them into the same folder as the client.
+
+Final client patch, Open stud_pe and drag the client in. go to functions then right click anywhere on imported functions. Click add new import. Dll Select. and select Injector. Select func. add the only func
+then click add to list. click on the function, then click add, then click ok.
+
+Done patching client.
+
+step 3: patching the server.
+
+Open the rccservice up in hxd
+
+search for 00 68 74 74 70 73 00 and change it to 00 68 74 74 70 00 00 and save it.
+
+close hxd and open x32dbg.
+
+Now patch trust check similarly to how you did it with the client, this time just dont click the right arrow because rcc does not have vmprotect.
+
+also patch "Non-trusted BaseURL used. HttpRbxApiService is only for Roblox API calls" with jmp, just like you did for trust check failed.
+
+put this in the same folder as the rcc: https://www.mediafire.com/file/z6fu21i4lt6qo3f/DevSettingsFile.json/file
+
+Also put this in the same folder as the rcc: https://www.mediafire.com/file/n75folbg0dwt9m7/gameserver.json/file
+
+step 4: setting up the website.
+
+I have already prepared a premade website for this client, https://www.mediafire.com/file/l2g0u80ad36r3i0/Webserver.7z/file
+
+Now run uwamp.exe
+
+Finally, we can start the rcc and client. Heres the cmds.
+
+Server: RCCService.exe -Console -verbose -placeid:1818 -localtest "gameserver.json" -settingsfile "DevSettingsFile.json" -port 64989
+
+Client: start RobloxPlayerBeta.exe -a "http://localhost/Login/Negotiate.ashx" -j "http://localhost/game/placelauncher.ashx" -t "1"
+
+If you get placeId verification failed, its probably because you are using an incorrect content folder. You can find a working one in various places online.
+
+If you run into any other issues, try to use this precompiled content folder and shaders, and everything else rcc may need: https://www.mediafire.com/file/az99ei05rnp74pw/Content.7z/file
