@@ -1,41 +1,46 @@
 # Let's Transform RakNet into Not-RakNet
 
 🟥⬜⬛
+
 In Feburary 2026, the Supreme Council for Media Regulation in Egypt [passed an ordinance blocking access to Rōblox for the entire country](https://www.afr.com/technology/minister-to-grill-roblox-over-child-grooming-fears-20260209-p5o0sw). This was accomplished via at least two ways:
 
-1. any traffic to roblox.com (128.116.13.3) is dropped.
+1. any IP traffic to roblox.com (128.116.13.3) is dropped.
 1. "offline-message" RakNet connection packets destined for _any_ IP address are blocked.
 
 I live in California, a state in the western United States. In July 2026, I was visiting Egypt to catch up with family. [WE (Telecomegypt)](https://te.eg/en/personal) is a government-owned ISP whose broadband infrastructure is used by just about everyone I know.
 
-Other ISPs (such as Vodafone, e&, and Orange) may have behave differently.
+Other ISPs (such as Vodafone, e&, and Orange) may be assumed to operate in the same fashion until future tests prove otherwise.
 
 ## Investigation
 
-I was attempting to join @Yakovexplorer on a Rōblox Freedom Distribution server whilst I'm in Egypt.
+I was attempting to join @yakovexplorer on a Rōblox Freedom Distribution server whilst I was in Egypt.
 
-I discover that accessing the server using RFD's v463 client would cause the "joining..." label to remain indefinitely, even though he was able to join by himself just fine.
+I discovered that accessing the server using RFD's v463 client would cause the "joining..." label to display indefinitely, even though he was able to join by himself just fine.
 
-I suspected that the culprit was with RakNet. We both confirmed that our firewalls were properly permissive; _no problem there_.
+I suspected that the culprit was RakNet. We both confirmed that our firewalls were properly permissive - _no problem there_.
 
-We also tried Radmin. Radmin was too unreliable to allow fluid gameplay, but RakNet packets _did_ transmit.
+We also tried Radmin. Radmin was too unreliable to allow fluid gameplay, but RakNet packets _did_ barely transmit.
 
-So, what started out as a routine troubleshooting round revealled something else...
+So, what started out as a routine troubleshooting round revealed something else...
 
 ### Experiment Setup
 
 I prepared an experiment to validate whether RakNet packets are blocked at the ISP level:
 
-1. Sender and receiver each log UDP packets usign Wireshark.
+1. Sender and receiver each keep logs of UDP packets using Wireshark.
 
-2. Sender sends two raw UDP packets with arbitrary data:
+2. Then, sender sends two raw UDP packets with arbitrary data:
    1. one packet with the actual desired payload
    2. one redundancy packet with a magic string
 
-3. Receiver checks that packets were received.
+3. After that, receiver checks that packets were received.
    - if both are received, no blockage
    - if only _latter_ was received, ISP blockage occurs
    - otherwise, experiment setup is faulty
+
+In attempting to connect to the server, I copied the first UDP packet that gets transmitted in the variable `p` above. Note that `p` is the body of the _entire_ UDP packet.
+
+We need to trim the first 42 bytes so that the Python script can re-generate the 42-byte-large UDP header for us.
 
 ```py
 import socket
@@ -63,17 +68,13 @@ sock.close()
 
 ### Experiment Results
 
-In attempting to connect to the server, I copied the first UDP packet that gets transmitted, in the variable `p` above. Note that `p` is the body for the _entire_ UDP packet.
+Indeed, when a RakNet connection is initiated, the initial request's payload bytes will contain `00ffff00fefefefefdfdfdfd12345678` from index 1 (i.e., counting up from the _second_ byte).
 
-We need to trim the first 42 bytes so that the Python script can re-generate the 42-byte-large UDP header for us.
-
-Yes, when a RakNet connection is initiated, the initial request's payload bytes will contain `00ffff00fefefefefdfdfdfd12345678` from index 1 (i.e., counting up from the _second_ byte).
-
-_This value is completely distinct from `PROTOCOL_MAGIC` in RakNet's [`SphynxTransport.hpp`](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/Network/raknet/Source/cat/net/SphynxTransport.hpp#L195)._
+_This value is completely distinct from `PROTOCOL_MAGIC` in RakNet's [`SphynxTransport.hpp`](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/Network/raknet/Source/cat/net/SphynxTransport.hpp#L195). The `PROTOCOL_MAGIC` variable does not appear to be a magic number despite the name; `OFFLINE_MESSAGE_DATA_ID` is the one that's relevant here._
 
 Once Wireshark sees that initial request, it then assumes that all subsequent packets are also RakNet.
 
-Per WireShark's [`RakPeer.cpp`](https://github.com/wireshark/wireshark/blob/f1af73573ffcdf5d65039d345352ec36c8ffd536/epan/dissectors/packet-raknet.c#L32):
+Per [WireShark's `RakPeer.cpp`](https://github.com/wireshark/wireshark/blob/f1af73573ffcdf5d65039d345352ec36c8ffd536/epan/dissectors/packet-raknet.c#L32):
 
 ```cpp
 static uint8_t RAKNET_OFFLINE_MESSAGE_DATA_ID[16] = {0x00, 0xff, 0xff, 0x00, 0xfe, 0xfe, 0xfe, 0xfe, 0xfd, 0xfd, 0xfd, 0xfd, 0x12, 0x34, 0x56, 0x78};
@@ -87,11 +88,9 @@ static const char OFFLINE_MESSAGE_DATA_ID[16]={0x00,0xFF,0xFF,0x00,0xFE,0xFE,0xF
 
 ## Finding in Rōblox
 
-In the v463 client, this exact data is found at `020815AC`. In RCC, it is found at `019087E4`,
+In the v463 client, this exact data is found at `020815AC`. In RCC, it is found at `019087E4`.
 
-This will work because the memory nearby looks the same between client and server.
-
-Although the nearby memory will look different between any v347 and v463, the memory looks identical between client v347 and server v347.
+Although the nearby memory will look different between any v347 and v463, the memory _on the bottom rows_ looks identical between client and server.
 
 Note that the magic sequence takes up the entire middle row in each of the examples below.
 
@@ -131,7 +130,9 @@ Note that the magic sequence takes up the entire middle row in each of the examp
 
 Since this is a constant value only really used by RakNet, it should be safe to assume that there will be thirteen (13) results for when you search for references to that magic string.
 
-I noticed that _all_ memory dumps above had the values at address-minus-1 equal to `00`. For this reason, let's subtract `0x1` to each instance I see.
+I noticed that _all_ memory dumps above had the values at address-minus-1 equal to `00`. I wanted the new magic string to be consistent across Rōblox versions.
+
+Let's subtract `0x1` from each instance I see.
 
 For example,
 
