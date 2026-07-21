@@ -68,7 +68,7 @@ sock.close()
 
 ### Experiment Results
 
-Indeed, when a RakNet connection is initiated, the initial request's payload bytes will contain `00ffff00fefefefefdfdfdfd12345678` from index 1 (i.e., counting up from the _second_ byte).
+Indeed, when a RakNet connection is initiated, the initial request's payload bytes will contain `00 FF FF 00 FE FE FE FE FD FD FD FD 12 34 56 78` from index 1 (i.e., counting up from the _second_ byte).
 
 _This value is completely distinct from `PROTOCOL_MAGIC` in RakNet's [`SphynxTransport.hpp`](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/Network/raknet/Source/cat/net/SphynxTransport.hpp#L195). The `PROTOCOL_MAGIC` variable does not appear to be a magic number despite the name; `OFFLINE_MESSAGE_DATA_ID` is the one that's relevant here._
 
@@ -133,6 +133,18 @@ Since this is a constant value only really used by RakNet, it should be safe to 
 I noticed that _all_ memory dumps above had the values at address-minus-1 equal to `00`. I wanted the new magic string to be consistent across Rōblox versions.
 
 Let's subtract `0x1` from each instance I see.
+
+So instead of:
+
+```
+00 FF FF 00 FE FE FE FE FD FD FD FD 12 34 56 78
+```
+
+It becomes:
+
+```
+00 00 FF FF 00 FE FE FE FE FD FD FD FD 12 34 56
+```
 
 For example,
 

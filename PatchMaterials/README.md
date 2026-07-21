@@ -18,13 +18,13 @@ There is still more to do.
 
 To allow us to re-locate material paths such as `rbxasset://textures/woodplanks/diffuse.dds`, we'll also need to replace some instances of `/` with `-`.
 
-1. Find a string in program memory which ends with `"-"`. One good place to look is in the string which we modified previously: `rbxassetid://rbxmtl-`. Take the memory address of the _final_ character of that string (the dash). In client v348, this address is `01539923`.
+1. Find a string in program memory which ends with `"-"`. One good place to look is in the string which we modified previously: `rbxassetid://rbxmtl-`. Take the memory address of the _final_ character of that string (the dash). In client v347, this address is `01539923`.
 
 2. Search user-string results for `"diffuse"`. There will be multiple results.
    - For each result, keep navigating up until you find a `push` instruction with a constant value as the argument. If the opcode is not equal to `68`, you can safely ignore.
-   - Replace the address in that instruction with the one you collected from step (1). In v348, you replace `push 01129658` with `push 01539923`.
+   - Replace the address in that instruction with the one you collected from step (1). In v347, you replace `push 01129658` with `push 01539923`.
 
-For example, in client v348:
+For example, in client v347:
 
 ```
 01059809 | 6A 01                    | push    0x1                                                      |

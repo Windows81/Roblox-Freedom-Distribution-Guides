@@ -62,7 +62,7 @@ However, Player may not give us the same ease.
 
 In v463, we can change `FIntGoogleAnalyticsLoadPlayerHundredth` to 0.
 
-But v348 does not have any such option. For now, I added `"GoogleAnalyticsLoadPlayer": 0,` to `ClientAppSettings.json` (_without_ any `F` prefix). This is because [the 2016 codebase refers to it in an `IMPL_DATA` macro](https://github.com/PatoFlamejanteTV/ROBLOX/blob/93cd93079dbbc2b77519715b96fd3388165a8708/App/v8datamodel/FastLogSettings.cpp#L180). **I do not currently know if it works.**
+But v347 does not have any such option. For now, I added `"GoogleAnalyticsLoadPlayer": 0,` to `ClientAppSettings.json` (_without_ any `F` prefix). This is because [the 2016 codebase refers to it in an `IMPL_DATA` macro](https://github.com/PatoFlamejanteTV/ROBLOX/blob/93cd93079dbbc2b77519715b96fd3388165a8708/App/v8datamodel/FastLogSettings.cpp#L180). **I do not currently know if it works.**
 
 ```cpp
 IMPL_DATA(GoogleAnalyticsLoadPlayer, 1); // percent probability of using google analytics

@@ -2,7 +2,7 @@
 
 ## Background
 
-I found a version of Studio from late 2021 ([v493.1.15175](https://archive.org/details/roblox-version-1fca050e38094184)) with a patch applied in x86 such that no login screen would be required. There was a change from `jnz` to `jz` at file address `0x002B951C`. This patch was location near a unique string reference to `"Studio.App.AutoSaveDialog.OpenRobloxFile"`. The specific fix that Reggie applied, however, can't be reproduced in my target versions of v348 and v463. However, a very similar one has been confirmed to work in v463.
+I found a version of Studio from late 2021 ([v493.1.15175](https://archive.org/details/roblox-version-1fca050e38094184)) with a patch applied in x86 such that no login screen would be required. There was a change from `jnz` to `jz` at file address `0x002B951C`. This patch was location near a unique string reference to `"Studio.App.AutoSaveDialog.OpenRobloxFile"`. The specific fix that Reggie applied, however, can't be reproduced in my target versions of v347 and v463. However, a very similar one has been confirmed to work in v463.
 
 When you launch v463 Studio without command-line arguments, you are presented with a login screen.
 
@@ -196,7 +196,7 @@ This function, as short as it looks, is where the patch takes place.
 
 ## (2) Firing `ILoginManager::loginSuccess`
 
-**This patch only applies to RFD's v463 Studio binary so far.** This is because v347 use Qt4, which recommends different signal-slot syntax.
+**This patch only applies to RFD's v463 Studio binary so far.** This is because v347 use Qt4, which recommends different signal-slot syntax. It appears that the patch is not necessary in RFD's v347 binary.
 
 For more information on how slots and signals work for the end user, refer to [some AI-slop explanation that I found online](https://runebook.dev/en/docs/qt/qobject/connect-3).
 

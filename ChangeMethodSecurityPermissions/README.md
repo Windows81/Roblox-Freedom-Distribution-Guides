@@ -1,4 +1,4 @@
-The following methods had their security permissions changed between vanilla Rōblox (v348 and v463) and RFD:
+The following methods had their security permissions changed between vanilla Rōblox (v347 and v463) and RFD:
 
 - `InsertService:CreateMeshPartAsync`
   - changed from `PluginSecurity` to `None` because Rōblox Corporation [made the same change in v649](https://setup-rbxcdn.github.io/ref/updates/2024.html#version-7cc6d2bdac2f4837-8).

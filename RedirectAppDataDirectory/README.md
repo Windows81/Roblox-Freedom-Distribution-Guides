@@ -12,7 +12,7 @@ Let's fix it.
    - If you happen to see a call to `GetModuleFileNameW` somewhere in the first 30 or so instructions, you're in the right place.
 
 3. Keep scrolling down until you find a reference to `SHGetFolderPathAndSubDir`.
-   - In v348, it looks like `mov ebx,dword ptr ds:[<SHGetFolderPathAndSubDir>]`. This reference should only appear once in this entire function.
+   - In v347, it looks like `mov ebx,dword ptr ds:[<SHGetFolderPathAndSubDir>]`. This reference should only appear once in this entire function.
    - In v463, that instead is `call <JMP.&SHGetFolderPathAndSubDirW>`. Here, this `call` statement appears twice, with the first being about 10 instructions before the second. _Pick the second one_.
 
 4. Searching about 20 lines in either direction, keep a note of nearby statement(s) either like `or eax,1C` or `or ebx,23`.
@@ -21,7 +21,7 @@ Let's fix it.
    - If there are multiple, keep note of them all.
 
 5. Also keep a note of the offset of `ebp` for a particular string buffer whose address gets pushed onto the stack.
-   - In v348, the offset is `0x264` [from `lea ecx,dword ptr ss:[ebp-250]`].
+   - In v347, the offset is `0x264` [from `lea ecx,dword ptr ss:[ebp-250]`].
    - In v463, the offset is `0x264` [from `lea ecx,dword ptr ss:[ebp-264]`].
 
 6. Surrounding the `or` statement(s) from step (4), fill all their surrounding instructions with `nop`.
@@ -60,7 +60,7 @@ enum FileSystemDir
 };
 ```
 
-By default, if you are running a Rōblox executable at `C:\Users\USER\Projects\FilteringDisabled\Roblox\v348\Server\*.exe`, the expected result will be a path at `C:\Users\USER\AppData\Local\Roblox\`.
+By default, if you are running a Rōblox executable at `C:\Users\USER\Projects\FilteringDisabled\Roblox\v347\Server\*.exe`, the expected result will be a path at `C:\Users\USER\AppData\Local\Roblox\`.
 
 We want these files to be saved at a relative path of the user's choosing. It can be controlled by a fast variable named `FStringUS20608`.
 
@@ -74,7 +74,7 @@ Notice here the interesting string `"logs"`.
 
 ### Finding `getUserDirectory`
 
-Let's open up x32dbg using the 2018E (v348) `RCCService.exe`.
+Let's open up x32dbg using the 2018E (v347) `RCCService.exe`.
 
 Then search for user strings.
 
@@ -209,7 +209,7 @@ Note that from (R1), these constants map into [the following hex values](https:/
 - `CSIDL_MYPICTURES` corresponds with 0x27.
 - `CSIDL_MYVIDEO` corresponds with 0x0E.
 
-In the v348 compilation, these constants can be found being taken a bitwise-or with statements such as `or eax,1C`, `or eax,27`, et c.
+In the v347 compilation, these constants can be found being taken a bitwise-or with statements such as `or eax,1C`, `or eax,27`, et c.
 
 I also found an `or ebx,23` statement when looking through the compiled code in v463. Therefore, we should add:
 
