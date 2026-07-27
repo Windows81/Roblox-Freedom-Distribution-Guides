@@ -36,7 +36,7 @@ cat "./*.txt" | Sort-Object -Unique |% {
   $n = "./cache/$_";
   if (-not (Test-Path $n -PathType Leaf)) { curl -L "https://assetdelivery.roblox.com/v1/asset/?id=$_" --output $n }
 }
-```
+````
 
 You'll need to manually sift through to remove any rate-limited dumps.  Perhaps run the previous command line again.
 
