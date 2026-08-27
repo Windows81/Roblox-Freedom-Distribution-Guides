@@ -1,4 +1,4 @@
--- This script manages context switches in the backpack (Gear to Wardrobe, etc.) and player state changes.  Also manages global functions across different tabs (currently only search)
+-- This script manages context switches in the backpack (Gear to Wardrobe, et c.) and player state changes.  Also manages global functions across different tabs (currently only search)
 if game.CoreGui.Version < 7 then return end -- peace out if we aren't using the right client
 
 -- basic functions
@@ -74,7 +74,7 @@ local backquote = "`"
 function createPublicEvent(eventName)
 	assert(eventName, "eventName is nil")
 	assert(tostring(eventName),"eventName is not a string")
-	
+
 	local newEvent = Instance.new("BindableEvent")
 	newEvent.Name = tostring(eventName)
 	newEvent.Parent = script
@@ -87,7 +87,7 @@ function createPublicFunction(funcName, invokeFunc)
 	assert(tostring(funcName), "funcName is not a string")
 	assert(invokeFunc, "invokeFunc is nil")
 	assert(type(invokeFunc) == "function", "invokeFunc should be of type 'function'")
-	
+
 	local newFunction = Instance.new("BindableFunction")
 	newFunction.Name = tostring(funcName)
 	newFunction.OnInvoke = invokeFunc
@@ -96,7 +96,7 @@ function createPublicFunction(funcName, invokeFunc)
 	return newFunction
 end
 
--- Events 
+-- Events
 local resizeEvent = createPublicEvent("ResizeEvent")
 local backpackOpenEvent = createPublicEvent("BackpackOpenEvent")
 local backpackCloseEvent = createPublicEvent("BackpackCloseEvent")
@@ -114,13 +114,13 @@ function deactivateBackpack()
 end
 
 function activateBackpack()
-	initHumanoidDiedConnections()		
+	initHumanoidDiedConnections()
 	active = true
 	backpack.Visible = backpackIsOpen
 end
 
-function initHumanoidDiedConnections()			
-	if humanoidDiedCon then 
+function initHumanoidDiedConnections()
+	if humanoidDiedCon then
 		humanoidDiedCon:disconnect()
 	end
 	waitForProperty(game.Players.LocalPlayer,"Character")
@@ -151,7 +151,7 @@ local hideBackpack = function()
 end
 
 function showBackpack()
-	game.GuiService:AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog, 
+	game.GuiService:AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog,
 		function()
 			backpack.Visible = true
 			backpackButton.Selected = true
@@ -179,7 +179,7 @@ function toggleBackpack()
 	if not readyForNextEvent then return end
 	readyForNextEvent = false
 	canToggle = false
-	
+
 	backpackIsOpen = not backpackIsOpen
 
 	if backpackIsOpen then
@@ -199,7 +199,7 @@ end
 function setSelected(tab)
 	assert(tab)
 	assert(tab:IsA("TextButton"))
-	
+
 	tab.BackgroundColor3 = Color3.new(1,1,1)
 	tab.TextColor3 = Color3.new(0,0,0)
 	tab.Selected = true
@@ -209,7 +209,7 @@ end
 function setUnselected(tab)
 	assert(tab)
 	assert(tab:IsA("TextButton"))
-	
+
 	tab.BackgroundColor3 = Color3.new(0,0,0)
 	tab.TextColor3 = Color3.new(1,1,1)
 	tab.Selected = false
@@ -218,7 +218,7 @@ end
 
 function updateTabGui(selectedTab)
 	assert(selectedTab)
-	
+
 	if selectedTab == "gear" then
 		setSelected(inventoryButton)
 		setUnselected(wardrobeButton)
@@ -231,18 +231,18 @@ end
 function mouseLeaveTab(button)
 	assert(button)
 	assert(button:IsA("TextButton"))
-	
+
 	if button.Selected then return end
-	
+
 	button.BackgroundColor3 = Color3.new(0,0,0)
 end
 
 function mouseOverTab(button)
 	assert(button)
 	assert(button:IsA("TextButton"))
-	
+
 	if button.Selected then return end
-	
+
 	button.BackgroundColor3 = Color3.new(39/255,39/255,39/255)
 end
 
@@ -250,7 +250,7 @@ function newTabClicked(tabName)
 	assert(tabName)
 	tabName = string.lower(tabName)
 	currentTab = tabName
-	
+
 	updateTabGui(tabName)
 	tabClickedEvent:Fire(tabName)
 	resetSearch()
@@ -262,7 +262,7 @@ end
 
 function splitByWhitespace(text)
 	if type(text) ~= "string" then return nil end
-	
+
 	local terms = {}
 	for token in string.gmatch(text, "[^%s]+") do
 	   if string.len(token) > 0 then
@@ -336,7 +336,7 @@ game:GetService("GuiService").KeyPressed:connect(function(key)
 		toggleBackpack()
 	end
 end)
-backpackButton.MouseButton1Click:connect(function() 
+backpackButton.MouseButton1Click:connect(function()
 	if not active then return end
 	toggleBackpack()
 end)

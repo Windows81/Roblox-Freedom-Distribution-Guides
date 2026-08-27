@@ -1,6 +1,6 @@
 All `rbxasset://textures/` material things get redirected to `rbxassetid://rbxmtl-` when you apply these patches.
 
-**If you're using a client version of Rōblox that obfuscates strings in the** `**exe**` **until they're loaded (such as v463), refer [here](../AddStrings2021E/README.md).**
+**If you're using a client version of Rōblox that obfuscates strings in the `exe` until they're loaded (such as v463), refer [here](../AddStrings2021E).**
 
 ---
 

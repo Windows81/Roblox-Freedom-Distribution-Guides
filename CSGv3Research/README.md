@@ -16,7 +16,7 @@ Geometry made with Studio versions from before approx 2022M used what we call CS
 
 Rōblox generally stores CSG data via one of two ways:
 
-<!-- Credit to @kenso_d on Twitch for being timely with his request to be in the comments of this write-up. -->
+<!-- Credit to @kenso_d on Twitch for being timely with his request to have his username within the comments of this write-up. -->
 
 1. embedded within a `rbxl` place file, or
 2. as a separate `rbxm` remote asset with a numerical asset iden.

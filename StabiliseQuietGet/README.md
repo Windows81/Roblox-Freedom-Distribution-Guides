@@ -1,6 +1,6 @@
 Rōblox was not designed to portably allow one to use whatever domain they want. I've had to make plenty of patches for Rōblox Freedom Distribution to use a webserver run on _unsigned_ HTTPS; that's easier to make patches for.
 
-However, this made fetching client settings break for v347 Player and Server.
+However, this made fetching client settings (i.e. FFlags, et c.) break for v347 Player and Server.
 
 Here's a hacky patch to make that work:
 
@@ -26,4 +26,4 @@ The scroll up a couple pages and patch the conditional-move statement out, so th
 
 ---
 
-This guide is not applicable for v463 because it uses a completely different endpoint.
+This guide is not applicable for v463 because it uses a completely different API endpoint.

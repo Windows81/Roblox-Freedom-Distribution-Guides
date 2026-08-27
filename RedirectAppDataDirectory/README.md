@@ -26,7 +26,7 @@ Let's fix it.
 
 6. Surrounding the `or` statement(s) from step (4), fill all their surrounding instructions with `nop`.
    - If there are multiple from step (4), apply the same procedure each of these times.
-   - Going up, keep noping until you find a statement like `jmp`, `jne`, `je`, etc.
+   - Going up, keep noping until you find a statement like `jmp`, `jne`, `je`, et c.
    - Going down, keep noping until you find a line that _receives_ a branch.
 
 7. If step (6) yields multiple regions, bridge them with unconditional `jmp`.

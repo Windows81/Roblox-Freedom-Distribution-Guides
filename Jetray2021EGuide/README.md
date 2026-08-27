@@ -2,17 +2,13 @@
 
 ---
 
-Thank you for the corrections. Here is the revised guide with GitHub-style admonitions, corrected notes about MediaFire links, and the updated `cacert.pem` information.
-
----
-
 # Revised Guide: Patching Rōblox Client & RCCService (Version 463, "2021E")
 
 > [!NOTE]
 > The MediaFire links in the original guide are not dead as of 2026-05-22, but they are also **not needed** for a modern patching approach. This revision omits them entirely.
 
 > [!IMPORTANT]
-> The `ssl/cacert.pem` file **does not need to exist at all** anymore. SSL bypass is handled entirely via the `localhost/.test` method and the trust check patches.
+> The `ssl/cacert.pem` file **does not need to exist at all**. The file was never needed in version 347. The file was previously necessary for version 463, but not anymore owing to [patches discovered for the Rōblox Freedom Distribution project](../AdvancedTrustCheck2021E/).
 
 ---
 
@@ -30,19 +26,19 @@ Thank you for the corrections. Here is the revised guide with GitHub-style admon
 
 ## Step 1: Client Patching (RobloxPlayerBeta.exe, version 463)
 
-### 1.1 Basic configuration
+### 1.1: Basic configuration
 
 - Locate `AppSettings.txt` next to the client.
 - Change `http://www.roblox.com` → `http://localhost/.test`
   _(localhost bypasses SSL certificate validation in this build)_
 
-### 1.2 Debugging & VMProtect bypass
+### 1.2: Debugging & VMProtect bypass
 
 - Open `x32dbg.exe` → drag in `RobloxPlayerBeta.exe`
 - Go to **Symbols** tab → find `RobloxPlayerBeta.exe` → wait for it to load
 - Click the **Run** (F9) button **twice** – this bypasses VMProtect entry point obfuscation
 
-### 1.3 Patch trust check
+### 1.3: Patch trust check
 
 - Right-click anywhere in CPU pane → **Search for** → **Current Module** → **String references**
 - Search for `"trust check failed"`
@@ -50,7 +46,7 @@ Thank you for the corrections. Here is the revised guide with GitHub-style admon
   - Find the `je` or `jne` instruction **above** it
   - Click on that `je`/`jne` → press **Spacebar** → change to `jmp` → press Enter
 
-### 1.4 Patch `127.0.0.1` check (if present)
+### 1.4: Patch `127.0.0.1` check (if present)
 
 - Search strings again for `"127.0.0.1"`
 - Find the result where:
@@ -59,7 +55,7 @@ Thank you for the corrections. Here is the revised guide with GitHub-style admon
 - Change that `je` → `jmp`
 - If another `127.0.0.1` under a `je`/`jne` appears nearby, also `jmp` it.
 
-### 1.5 `ClientAppSettings.json`
+### 1.5: `ClientAppSettings.json`
 
 - Create a folder named `ClientSettings` next to `RobloxPlayerBeta.exe`
 - Inside it, create `ClientAppSettings.json` with your desired flags (e.g., disabling telemetry, enabling local dev features).
@@ -67,12 +63,12 @@ Thank you for the corrections. Here is the revised guide with GitHub-style admon
 > [!NOTE]
 > The original MediaFire link for `ClientAppSettings.json` is not needed. Use your own or a known-good configuration for version 463.
 
-### 1.6 SSL certificate replacement
+### 1.6: SSL certificate replacement
 
 > [!NOTE]
 > **SKIPPED** – The `ssl/cacert.pem` file does not need to exist at all anymore. The `localhost/.test` method combined with trust check patches fully bypasses SSL requirements.
 
-### 1.7 DLL injection via Stud_PE (deprecated)
+### 1.7: DLL injection via Stud_PE (deprecated)
 
 > [!WARNING]
 > **DEPRECATED** – The original guide's `Injector.dll` + Stud_PE import method is obsolete. Better patches exist. Do not follow this step.
@@ -81,20 +77,20 @@ Thank you for the corrections. Here is the revised guide with GitHub-style admon
 
 ## Step 2: Patching the Server (RCCService.exe)
 
-### 2.1 Hex edit HTTPS → HTTP
+### 2.1: Hex edit HTTPS → HTTP
 
 - Open `RCCService.exe` in **HxD**
 - Search for hex: `00 68 74 74 70 73 00`
 - Replace with: `00 68 74 74 70 00 00`
 - Save
 
-### 2.2 Debugger patches (RCC has no VMProtect)
+### 2.2: Debugger patches (RCC has no VMProtect)
 
 - Open `RCCService.exe` in `x32dbg` (no double-F9 needed)
 - String references → search for `"trust check failed"` → patch `je`/`jne` → `jmp` as before
 - Search for `"Non-trusted BaseURL used. HttpRbxApiService is only for Rōblox API calls"` → patch the conditional jump above it → `jmp`
 
-### 2.3 Configuration files
+### 2.3: Configuration files
 
 Place these in **the same folder as `RCCService.exe`**:
 
@@ -121,13 +117,13 @@ Place these in **the same folder as `RCCService.exe`**:
 
 ## Step 4: Running
 
-### Server command
+### Server Command
 
 ```cmd
 RCCService.exe -Console -verbose -placeid:1818 -localtest "gameserver.json" -settingsfile "DevSettingsFile.json" -port 64989
 ```
 
-### Client command
+### Client Command
 
 ```cmd
 start RobloxPlayerBeta.exe -a "http://localhost/Login/Negotiate.ashx" -j "http://localhost/game/placelauncher.ashx" -t "1"

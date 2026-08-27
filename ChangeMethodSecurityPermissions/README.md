@@ -28,7 +28,7 @@ These are the enum values which correspond to different security contexts ([sour
 			RobloxPlace			=2,     // A Roblox place that we own. Therefore scripts are more trusted and we allow
 										// preliminary features
 			LocalUser			=3,     // non-game permission. Usually for IDE
-			WritePlayer			=4,		// Permissions for changing player name, userId, etc.
+			WritePlayer			=4,		// Permissions for changing player name, userId, et c.
 			RobloxScript		=5,     // A script, such as a CoreScript, that we run inside a game
 			Roblox				=6,     // Highest level of permission
 

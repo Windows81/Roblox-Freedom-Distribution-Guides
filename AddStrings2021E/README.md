@@ -1,6 +1,14 @@
 # So You Want to Add Your Own Strings to Rōblox 0.463?
 
+Some of my patches (such as [one related to server-authoritative materials](../PatchMaterials/)) simply require replacing string data within the `exe`, such as `"rbxasset://textures/plastic/studs.dds"` with `"rbxassetid://rbxmtl-plastic-studs.dds"`. However, Rōblox player version v463 (early 2021) obfuscates strings in the `exe` _until loaded at runtime_.
+
+Rōblox Freedom Distribution's solution is to add an empty megabyte onto which we can insert custom strings. Then, we use x32dbg to replace all the string references in code.
+
+_This procedure only covers adding an empty megabyte onto which we can insert custom strings and targets ~v463._
+
 Reach out to VisualPlugin if you need help with the instructions.
+
+## Quick Procedure
 
 Tools required:
 
@@ -9,29 +17,29 @@ Tools required:
 
 Disclaimer: you can use better and more efficient methods than mine.
 
-1. Launch PE Tools, ignoring any warnings about `SeDebugPrivilege` that may show up.
+### Step 1: Launch PE Tools
 
-2. In selecting _PE Editor_ (Alt + 1), open `RobloxPlayerBeta.exe` as a file.
+Launch PE Tools, ignoring any warnings about `SeDebugPrivilege` that may show up.
+
+In selecting _PE Editor_ (Alt + 1), open `RobloxPlayerBeta.exe` as a file.
 
 ![](image-0.png)
 
----
+### Step 2: Create New Section
 
-3. Navigate to _Sections_, right-click anywhere on the _Sections Information_ box, then to _Add section_.
+Navigate to _Sections_, right-click anywhere on the _Sections Information_ box, then to _Add section_.
 
 ![](image-1.png)
 
----
-
-4. Add an empty section (with _Fill with 0x00_ selected). The name can be set to whatever you want. Maybe `.new`. Maybe `.rdata2`.
+Add an empty section (with _Fill with 0x00_ selected). The name can be set to whatever you want. Maybe `.new`. Maybe `.rdata2`.
 
 ![](image-2.png)
 
----
+**Changes are written to the `exe` once you click _Add_.** You can then immediately close PE Tools.
 
-5. Changes are written to the `exe` once you click _Add_. Close PE Tools
+### Step 6: Disable ASLR
 
-6. Disable ASLR using the ASLR Disabler tool.
+Disable ASLR using the ASLR Disabler tool.
 
 ---
 
