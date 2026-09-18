@@ -16,15 +16,19 @@ Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-09-18
 
 ### Version 347 (2018M)
 
-Server: _to be located_
-Client: _to be located_
-Studio: `d9cf1f7e4fe14aa9` ([Robloxopolis Archive](<https://archive.robloxopolis.com/archive/Clients/DeployHistory/setup.roblox.com/Windows/Studio/0.347.0.28462%20(version-d9cf1f7e4fe14aa9).zip>))
+- Server: _to be located_
+
+- Client: _to be located_
+
+- Studio: `d9cf1f7e4fe14aa9` ([Robloxopolis Archive](<https://archive.robloxopolis.com/archive/Clients/DeployHistory/setup.roblox.com/Windows/Studio/0.347.0.28462%20(version-d9cf1f7e4fe14aa9).zip>))
 
 ### Version 463 (2021E)
 
-Server: `07b64feec0bd47c1` ([Rōblonium Archive](https://archive.roblonium.com/Client/Windows/RCCService/production/RCCServiceR7Z9CYTW7WBR95VW/version-07b64feec0bd47c1/version-07b64feec0bd47c1-RCCServiceR7Z9CYTW7WBR95VW.zip))
-Client: `5a54208fe8e24e87` ([Internet Archive](https://web.archive.org/web/20240224094219if_/https://setup.rbxcdn.com/version-5a54208fe8e24e87-RobloxApp.zip))
-Studio: `c993d5e9c7224b14` ([Internet Archive](https://web.archive.org/web/20240324082713if_/http://setup.rbxcdn.com/version-c993d5e9c7224b14-RobloxStudio.zip))
+- Server: `07b64feec0bd47c1` ([Rōblonium Archive](https://archive.roblonium.com/Client/Windows/RCCService/production/RCCServiceR7Z9CYTW7WBR95VW/version-07b64feec0bd47c1/version-07b64feec0bd47c1-RCCServiceR7Z9CYTW7WBR95VW.zip))
+
+- Client: `5a54208fe8e24e87` ([Internet Archive](https://web.archive.org/web/20240224094219if_/https://setup.rbxcdn.com/version-5a54208fe8e24e87-RobloxApp.zip))
+
+- Studio: `c993d5e9c7224b14` ([Internet Archive](https://web.archive.org/web/20240324082713if_/http://setup.rbxcdn.com/version-c993d5e9c7224b14-RobloxStudio.zip))
 
 ## Guide Index
 
