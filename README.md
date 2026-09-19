@@ -16,9 +16,9 @@ Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-09-18
 
 ### Version 347 (2018M)
 
-- Server: `f21a8e91e6d1416a` ([Gametest2 RCCService Archive](https://archive.org/download/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip))
+- Server: `f21a8e91e6d1416a` ([Gametest2 RCCService](https://archive.org/download/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip) [Archive](https://web.archive.org/web/20260919031822if_/https://dn721607.ca.archive.org/0/items/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip))
 
-- Client: _to be located_
+- Player: `2ec87a18126443e7` ([Wayback Machine](https://web.archive.org/web/20220726110401if_/http://setup.gametest2.robloxlabs.com/version-2ec87a18126443e7-RobloxApp.zip))
 
 - Studio: `d9cf1f7e4fe14aa9` ([Robloxopolis Archive](<https://archive.robloxopolis.com/archive/Clients/DeployHistory/setup.roblox.com/Windows/Studio/0.347.0.28462%20(version-d9cf1f7e4fe14aa9).zip>))
 
@@ -26,9 +26,9 @@ Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-09-18
 
 - Server: `07b64feec0bd47c1` ([Rōblonium Archive](https://archive.roblonium.com/Client/Windows/RCCService/production/RCCServiceR7Z9CYTW7WBR95VW/version-07b64feec0bd47c1/version-07b64feec0bd47c1-RCCServiceR7Z9CYTW7WBR95VW.zip))
 
-- Client: `5a54208fe8e24e87` ([Internet Archive](https://web.archive.org/web/20240224094219if_/https://setup.rbxcdn.com/version-5a54208fe8e24e87-RobloxApp.zip))
+- Player: `5a54208fe8e24e87` ([Wayback Machine](https://web.archive.org/web/20240224094219if_/https://setup.rbxcdn.com/version-5a54208fe8e24e87-RobloxApp.zip))
 
-- Studio: `c993d5e9c7224b14` ([Internet Archive](https://web.archive.org/web/20240324082713if_/http://setup.rbxcdn.com/version-c993d5e9c7224b14-RobloxStudio.zip))
+- Studio: `c993d5e9c7224b14` ([Wayback Machine](https://web.archive.org/web/20240324082713if_/http://setup.rbxcdn.com/version-c993d5e9c7224b14-RobloxStudio.zip))
 
 ## Guide Index
 
