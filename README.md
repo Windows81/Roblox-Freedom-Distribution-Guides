@@ -16,7 +16,7 @@ Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-09-18
 
 ### Version 347 (2018M)
 
-- Server: _to be located_
+- Server: `f21a8e91e6d1416a` ([Gametest2 RCCService Archive](https://archive.org/download/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip))
 
 - Client: _to be located_
 
