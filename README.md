@@ -66,7 +66,7 @@ The best items contain "quick guides", along with a primer on additional finding
 | [Bypass Studio Login](./StudioLogin/)                                                         | True        | 1.0     |
 | [Support `MessagingService`](./SupportMessagingService/)                                      | False       | 0.6     |
 | [Support `task.wait`](./SupportTaskWait/)                                                     | True        | 0.8     |
-| [Stabilise `/Setting/QuietGet/%s/`](./StabiliseQuietGet/)                                     | True        | 0.8     |
+| [Fix `/Setting/QuietGet/%s/` to HTTPS](./FixQuietGetProtocol/)                                | True        | 0.8     |
 | [Keep RCC's Settings Key Constant](./ConstantiseRCCSettingsKey)                               | True        | 0.8     |
 | [Pending Research on Terrain](./Terrain/)                                                     | False       | 0.1     |
 | [Rearrange `./Content` Directory for Studio](./RearrangeContentFolder/)                       | True        | 0.8     |
