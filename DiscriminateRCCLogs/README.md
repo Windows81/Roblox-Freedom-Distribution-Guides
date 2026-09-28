@@ -7,7 +7,7 @@ So we need to extract every valid `FLog` setting. This can be done by:
 We start with a value of 100 to ensure that each custom log levels will be unique and won't clash with any standard or predefined log levels. This can be quickly automated per the command below. A cached copy is saved in [`./RFD-FLogs.json`](./RFD-FLogs.json).
 
 ```sh
-curl -s "https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/raw/refs/heads/main/test/v{348,463}-server.json" -L | jq -s 'add | keys | unique | map(. | split("^D?FLog"; null)[1]) | del(.. | nulls)'
+curl -s "https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/raw/refs/heads/main/test/v{348,463}-server.json" -L | jq -s 'add | keys | unique | map(select(. | test("^D?FLog")))'
 ```
 
 Additionally:

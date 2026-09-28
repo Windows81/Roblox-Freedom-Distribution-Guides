@@ -70,7 +70,7 @@ You can define these values in the following files:
 
 ---
 
-I had to remove `"FFLogOutlineBrightnessMax"`, `"FFLogOutlineBrightnessMin"`, and `"FFLogOutlineThickness"` since [they mess with rendering materials in my 2018M build](https://github.com/Windows81/Roblox-Freedom-Distribution/issues/41).
+I had to remove `"FLogOutlineBrightnessMax"`, `"FLogOutlineBrightnessMin"`, and `"FLogOutlineThickness"` since [they mess with rendering materials in my 2018M build](https://github.com/Windows81/Roblox-Freedom-Distribution/issues/41).
 
 ## What I did next
 

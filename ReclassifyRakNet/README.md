@@ -17,13 +17,13 @@ Open your Rōblox binary in x32dbg. Then, once program strings are loaded, head 
 
 ![alt text](image.png)
 
-Select one row, hit Ctrl + A, then right click and search in the entire memory of the program for hex string:
+Select one row, hit _Ctrl + A_, then right click and search in the entire memory of the program for hex string:
+
+![alt text](image-1.png)
 
 ```
 00 FF FF 00 FE FE FE FE FD FD FD FD 12 34 56 78
 ```
-
-![alt text](image-1.png)
 
 ---
 
