@@ -4,20 +4,63 @@
 
 In Feburary 2026, the Supreme Council for Media Regulation in Egypt [passed an ordinance blocking access to Rōblox for the entire country](https://www.afr.com/technology/minister-to-grill-roblox-over-child-grooming-fears-20260209-p5o0sw). This was accomplished via at least two ways:
 
-1. any IP traffic to roblox.com (128.116.13.3) is dropped.
-1. "offline-message" RakNet connection packets destined for _any_ IP address are blocked.
+1. All IP traffic to roblox.com (`128.116.13.3`) is dropped.
+1. Any "offline-message" RakNet connection packets destined for _any_ IP address are blocked.
 
 I live in California, a state in the western United States. In July 2026, I was visiting Egypt to catch up with family. [WE (Telecomegypt)](https://te.eg/en/personal) is a government-owned ISP whose broadband infrastructure is used by just about everyone I know.
 
 Other ISPs (such as Vodafone, e&, and Orange) may be assumed to operate in the same fashion until future tests prove otherwise.
 
+## Quick Guide
+
+Open your Rōblox binary in x32dbg. Then, once program strings are loaded, head to the _Memory_ tab.
+
+![alt text](image.png)
+
+Select one row, hit Ctrl + A, then right click and search in the entire memory of the program for hex string:
+
+```
+00 FF FF 00 FE FE FE FE FD FD FD FD 12 34 56 78
+```
+
+![alt text](image-1.png)
+
+---
+
+Depending on how far you've loaded, there may be many results.
+
+Only copy the _first_ result's memory address.
+
+![alt text](image-2.png)
+
+![alt text](image-3.png)
+
+---
+
+Then, initiate a search for constants that use your copied address:
+
+![alt text](image-4.png)
+
+![alt text](image-5.png)
+
+---
+
+For each instruction, subtract one from the hex value you find. For example,
+
+```diff
+-2C615AC
++2C615AB
+```
+
+![alt text](image-6.png)
+
 ## Investigation
 
-I was attempting to join @yakovexplorer on a Rōblox Freedom Distribution server whilst I was in Egypt.
+I was attempting to join [@yakovexplorer](https://github.com/yakovexplorer/) on a Rōblox Freedom Distribution server whilst I was in Egypt.
 
 I discovered that accessing the server using RFD's v463 client would cause the "joining..." label to display indefinitely, even though he was able to join by himself just fine.
 
-I suspected that the culprit was RakNet. We both confirmed that our firewalls were properly permissive - _no problem there_.
+I suspected that the culprit was RakNet. We both confirmed that hoster's firewall was properly permissive - _no problem there_.
 
 We also tried Radmin. Radmin was too unreliable to allow fluid gameplay, but RakNet packets _did_ barely transmit.
 

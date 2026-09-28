@@ -62,7 +62,7 @@ The best items contain "quick guides", along with a primer on additional finding
 | [Redirect App Data Directory](./RedirectAppDataDirectory/)                                    | True        | 0.8     |
 | [Enable Save Place](./EnableSavePlace/)                                                       | True        | 0.8     |
 | [Reclassify RakNet for Hostile ISPs](./ReclassifyRakNet/)                                     | True        | 1.0     |
-| [Fix Security Timeout](./FixSecurityTimeout/)                                                 | True        | 1.0     |
+| [Fix Security Timeout](./FixSecurityTimeout/)                                                 | True        | 0.5     |
 | [Bypass Studio Login](./StudioLogin/)                                                         | True        | 1.0     |
 | [Support `MessagingService`](./SupportMessagingService/)                                      | False       | 0.6     |
 | [Support `task.wait`](./SupportTaskWait/)                                                     | True        | 0.8     |
