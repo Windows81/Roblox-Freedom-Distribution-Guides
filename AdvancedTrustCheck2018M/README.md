@@ -69,4 +69,4 @@ However, we need to find the function first. To do so, there are some strings th
 
 We only need to look for user-module references to one these strings; I chose `"robloxlabs.com"`.
 
-Once I found that string, I made sure that I could find at least one other that is also in the list.
+Once I found that string, I made sure that I could find at least one of the other strings that appear on that list.

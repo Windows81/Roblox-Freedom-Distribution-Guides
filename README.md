@@ -12,11 +12,11 @@ Rōblox Freedom Distribution (RFD) began its development in June 2023 using `exe
 
 I have taken care to locate the original sources so as to create a complete lineage of Freedom Distribution's patches.
 
-Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-09-18 (RFD 0.68.0).
+Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-10-01 (RFD 0.68.3).
 
 ### Version 347 (2018M)
 
-- Server: `f21a8e91e6d1416a` ([Gametest2 RCCService](https://archive.org/download/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip) [Archive](https://web.archive.org/web/20260919031822if_/https://dn721607.ca.archive.org/0/items/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip))
+- Server: `f21a8e91e6d1416a` ([Gametest2 RCCService](https://archive.org/download/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip) - [Archive](https://web.archive.org/web/20260919031822if_/https://dn721607.ca.archive.org/0/items/gametest2-rccservice/version-f21a8e91e6d1416a-RCCService.zip))
 
 - Player: `2ec87a18126443e7` ([Wayback Machine](https://web.archive.org/web/20220726110401if_/http://setup.gametest2.robloxlabs.com/version-2ec87a18126443e7-RobloxApp.zip))
 
@@ -34,10 +34,13 @@ Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-09-18
 
 Listed below are the directories in this repository, along with roughly how well they achieve their stated purpose.
 
-The best items contain "quick guides", along with a primer on additional findings to describe how we reached our conclusions.
+Items with a high _Clarity_ rating will contain "quick guides" and a primer on additional findings to describe how we reached our conclusions.
 
 | Guide                                                                                         | Implemented | Clarity |
 | --------------------------------------------------------------------------------------------- | ----------- | ------- |
+| [Aep's Guide for 2018M](./Aep2018MGuide/)                                                     | True        | 0.9     |
+| [Jetray's Guide for 2021E <sub>need to derive relevant patches</sub>](./Jetray2021EGuide)     | True        | 0.7     |
+| [Worships' Guide for 2021E <sub>need to derive relevant patches</sub>](./Worships2021EGuide/) | True        | 0.7     |
 | [Add Custom String Data in 2021E](./AddStrings2021E/)                                         | True        | 1.0     |
 | [Attachments Not Parented to a `PartInstance`](./AttachmentsNotParentedToPartInstances/)      | True        | 0.7     |
 | [Force RCCService FFlags to Load](./RCCServiceFFlagsFetchPatch/)                              | N/A         | 1.0     |
@@ -45,30 +48,28 @@ The best items contain "quick guides", along with a primer on additional finding
 | [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E/)                                  | True        | 1.0     |
 | [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                       | True        | 1.0     |
 | [Change Method Security Permissions](./ChangeMethodSecurityPermissions/)                      | N/A         | 1.0     |
-| [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                            | False       | 0.3     |
-| [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                     | False       | 0.4     |
+| [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                            | False       | 0.4     |
+| [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                     | False       | 0.5     |
 | [Discriminate RCC Logs](./DiscriminateRCCLogs/)                                               | True        | 0.9     |
 | [Extract Core Roblox Assets](./ExtractRobloxCoreAssets/)                                      | True        | 0.7     |
 | [Bypass Video Limits](./BypassVideoLimits/)                                                   | True        | 1.0     |
-| [Insert Objects for 2021E](./InsertObjects2021E/)                                             | True        | 0.8     |
-| [Make Asset URLs Permissive](./MakeAssetURLsPermissive/)                                      | False       | 0.3     |
-| [Force Use of Simple HTTP](./ForceNormalHTTP/)                                                | False       | 0.3     |
+| [Populate Insert-Objects Widget for 2021E](./InsertObjects2021E/)                             | True        | 0.8     |
+| [Make Asset URLs Permissive](./MakeAssetURLsPermissive/)                                      | False       | 0.2     |
+| [Force Use of Simple HTTP](./ForceSimpleHTTP)                                                 | False       | 0.3     |
 | [Allow Multiple Simultaneous Clients](./AllowMultipleClients/)                                | True        | 1.0     |
 | [Fix Occasional Client Crashes](./FixOccasionalClientCrashes/)                                | True        | 1.0     |
 | [Constructive Solid Geometry (CSG) Research](./CSGv3Research/)                                | True        | 0.5     |
 | [Patch Materials](./PatchMaterials/)                                                          | True        | 1.0     |
-| [Bypass Transport-Layer Security (TLS) Verification](./PatchTLSVerification/)                 | True        | 0.9     |
+| [Bypass Transport-Layer Security (TLS) Verification](./PatchTLSVerification/)                 | True        | 1.0     |
 | [Enable Port Agnosticness](./EnablePortAgnosticness/)                                         | True        | 0.7     |
 | [Redirect App Data Directory](./RedirectAppDataDirectory/)                                    | True        | 0.8     |
 | [Enable Save Place](./EnableSavePlace/)                                                       | True        | 0.8     |
 | [Reclassify RakNet for Hostile ISPs](./ReclassifyRakNet/)                                     | True        | 1.0     |
 | [Fix Security Timeout](./FixSecurityTimeout/)                                                 | True        | 0.4     |
 | [Bypass Studio Login](./StudioLogin/)                                                         | True        | 1.0     |
-| [Support `MessagingService`](./SupportMessagingService/)                                      | False       | 0.6     |
+| [Support `MessagingService`](./SupportMessagingService/)                                      | False       | 0.4     |
 | [Support `task.wait`](./SupportTaskWait/)                                                     | True        | 0.8     |
 | [Fix `/Setting/QuietGet/%s/` to HTTPS](./FixQuietGetProtocol/)                                | True        | 0.8     |
 | [Keep RCC's Settings Key Constant](./ConstantiseRCCSettingsKey)                               | True        | 0.8     |
-| [Pending Research on Terrain](./Terrain/)                                                     | False       | 0.1     |
+| [Pending Research on Terrain](./Terrain/)                                                     | N/A         | 0.3     |
 | [Rearrange `./Content` Directory for Studio](./RearrangeContentFolder/)                       | True        | 0.8     |
-| [Jetray's Guide for 2021E <sub>need to derive relevant patches</sub>](./Jetray2021EGuide)     | True        | 0.7     |
-| [Worships' Guide for 2021E <sub>need to derive relevant patches</sub>](./Worships2021EGuide/) | True        | 0.7     |

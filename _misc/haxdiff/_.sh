@@ -1,4 +1,6 @@
+#!/bin/sh
 # Optimised for VisualPlugin's personal use on DESKTOP-0676767
+cd "$(dirname "$0")" || exit
 
 haxdiff d "../../../Roblox/v347/Player/_RobloxPlayerBeta__very_original.exe" "../../../Roblox/v347/Player/RobloxPlayerBeta.exe" >v347-player.haxdiff
 haxdiff d "../../../Roblox/v463/Player/_RobloxPlayerBeta__very_original.exe" "../../../Roblox/v463/Player/RobloxPlayerBeta.exe" >v463-player.haxdiff

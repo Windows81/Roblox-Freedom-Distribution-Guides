@@ -1,0 +1,23 @@
+2018M Patching Guide by Aep
+
+
+
+Download the client, and RCCService, I have provided both of these here with the matching files!
+
+Get HxD, and x32dbg.
+
+Open the RobloxPlayerBeta.exe in x32dbg, then go to symbols, robloxplayerbeta.exe, double click that, then right click in the cpu area anywhere (https://i.imgur.com/ibnE4eb.png), this should come up.
+
+Go to search for, current module, string references, now type in "Client:Connect". One result should pop up. Click on that. Once there, scroll up, and you should see this: https://i.imgur.com/LrakFPL.png
+
+Click on the line with the je above "localhost", and change the "je" to a "jmp".
+
+Now go back to references, and search "Loading shader files". Again, one result should pop up. Click on this result. There should again be a je above "Important !Loading shader files", change this je to a jmp.
+
+Save the patches part 1 by going to file, patch file, and apply patches in x32dbg.
+
+Open the patched RobloxPlayerBeta.exe in HxD, then replace all roblox.com with your 10 character domain, and replace your public key too (BgIAA, don't worry about the longer bgiaa, only the one with "==" at the end)
+
+Open RCCService.exe in HXD, and replace roblox.com with your 10 characater domain, and replace the public key too.
+
+Once that's done, you should be good! Make sure to use the flags I provided for both client and RCCService, or you WILL have issues!

@@ -1,13 +1,15 @@
-**Rōblox (v463) might sometimes crash on me.**
+**Sometimes, Rōblox may crash intermittently. There ought to be a procedure to trace where these crashes come from!**
+
+---
 
 As of 2025-07-07, there are two common address locations where Rōblox can crash randomly. The solution is as follows:
 
-1. In the Player's `ClientAppSettings.json`, set `DFIntAnalyticsNS1CDNProbeChancePercent` to 0, and
+1. In the Player's `ClientAppSettings.json`, set `DFIntAnalyticsNS1CDNProbeChancePercent` to `0`, and
 2. Apply the patches from [`./v463-player.1337`](./v463-player.1337).
 
 ## Why?
 
-I've provided some client-sided minidumps to find out.
+I've provided some client-sided minidumps to help you find out.
 
 ### For Solution (1)
 
