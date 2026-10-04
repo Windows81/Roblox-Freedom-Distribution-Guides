@@ -70,7 +70,7 @@ void Application::waitForNewPlayerProcess(HWND hWnd)
 }
 ```
 
----
+## Patch for v463
 
 When I locate the `waitForNewPlayerProcess` routine v463 (2021E) and compare, we're getting (at least some of) the same strings.
 
@@ -122,3 +122,26 @@ In all, the final patch for v463 player would be:
  005EF2A6 | E8 052C0000              | call robloxplayerbeta.5F1EB0
  005EF2AB | C3                       | ret
 ```
+
+## Patch for v347
+
+As of Rōblox Freedom Distribution 0.68.3, the approach I took was much simpler.
+
+1. Search for references to `"ROBLOX_singletonEvent"` as a user string.
+   - You'll find _one_ result with an instruction at `004A9B5C`.
+
+2. Subtract _one_ from the number at that instruction.
+   - Example: change `1129BDC` to `1129BDB`.
+
+```patch
+ 004A9B5B | 57                       | push edi                               |
+-004A9B5C | 68 DC9B1201              | push __robloxplayerbeta.1129BDC        | 1129BDC:"ROBLOX_singletonEvent"
++004A9B5C | 68 DC9B1201              | push __robloxplayerbeta.1129BDB        | 1129BDB:"\0"
+ 004A9B61 | 6A 00                    | push 0                                 |
+ 004A9B63 | 6A 00                    | push 0                                 |
+ 004A9B65 | 6A 00                    | push 0                                 |
+ 004A9B67 | 894D F0                  | mov dword ptr ss:[ebp-10],ecx          |
+ 004A9B6A | FF15 A4141201            | call dword ptr ds:[<&CreateEventA>]    |
+```
+
+This patch changes the string reference to `"ROBLOX_singletonEvent"` into that of a null string (`\0`). Therefore, the call to Win32 function `CreateEventA` becomes ineffective.
