@@ -53,6 +53,6 @@ void Application::setWindowFrame()
 
 ### Why?
 
-Rōblox's clients _require_ use of Rōblox's website and services to operate under normal conditions. Some revivals get around this restriction by using a hex editor to _replace_ every raw-string instance of `roblox.com` with their own domain name (e.g. `pekora.zip`). This design works for some revival websites that don't need to keep swiching hostnames, but _not_ Rōblox Freedom Distribution.
+Rōblox's clients _require_ use of Rōblox's website and services to operate under normal conditions. Some revivals get around this restriction by using a hex editor to _replace_ every raw-string instance of `roblox.com` with their own domain name (e.g. `synt2x.xyz`). This design works for some revival websites that don't need to keep swiching hostnames, but _not_ Rōblox Freedom Distribution.
 
 Instead, Rōblox Freedom Distribution takes advantage of the open secret of how Rōblox allows use of a different hostname by introducing a custom `BaseUrl` field to `AppSettings.xml`. This mechanism exists so that Rōblox employees could test Rōblox's programs using their own staging servers (i.e., _not_ `roblox.com`). However, what you can include in the `BaseUrl` input is tightly limited. [VisualPlugin's trust-check-bypass guide](../AdvancedTrustCheck2018M/) overcomes this stòópid limitation.

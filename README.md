@@ -12,7 +12,7 @@ Rōblox Freedom Distribution (RFD) began its development in June 2023 using `exe
 
 I have taken care to locate the original sources so as to create a complete lineage of Freedom Distribution's patches.
 
-Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated 2026-10-01 (RFD 0.68.3).
+Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated at _soonest_ 2026-10-01 (RFD 0.68.3).
 
 ### Version 347 (2018M)
 
@@ -48,6 +48,7 @@ Items with a high _Clarity_ rating will contain "quick guides" and a primer on a
 | [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E/)                                  | True        | 1.0     |
 | [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                       | True        | 1.0     |
 | [Change Method Security Permissions](./ChangeMethodSecurityPermissions/)                      | N/A         | 1.0     |
+| [Bypass `--rbxsig...`](./BypassRbxsig/)                                                       | True        | 0.8     |
 | [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                            | False       | 0.4     |
 | [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                     | False       | 0.5     |
 | [Discriminate RCC Logs](./DiscriminateRCCLogs/)                                               | True        | 0.9     |
