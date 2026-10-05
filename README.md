@@ -56,6 +56,7 @@ Items with a high _Clarity_ rating will contain "quick guides" and a primer on a
 | [Bypass Video Limits](./BypassVideoLimits/)                                                   | True        | 1.0     |
 | [Populate Insert-Objects Widget for 2021E](./InsertObjects2021E/)                             | True        | 0.8     |
 | [Make Asset URLs Permissive](./MakeAssetURLsPermissive/)                                      | False       | 0.2     |
+| [Disable SOAP](./DisableSOAP/)                                                                | False       | 1.0     |
 | [Force Use of Simple HTTP](./ForceSimpleHTTP)                                                 | False       | 0.3     |
 | [Allow Multiple Simultaneous Clients](./AllowMultipleClients/)                                | True        | 1.0     |
 | [Fix Occasional Client Crashes](./FixOccasionalClientCrashes/)                                | True        | 1.0     |
