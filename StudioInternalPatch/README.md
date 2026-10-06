@@ -36,7 +36,7 @@ This patch only applies to Rōblox Freedom Distribution's v463 `RobloxStudioBeta
 
 In browsing the v548 PDB files (which some Rōblox reverse-engineers refer to for research), I discovered a string that we can easily find and apply patches from: `"Internal Permission is required for this feature."`.
 
-This code snippet, decompiled in IDA, references this string exposes two static addresses which we can easily force into truish values.
+This code snippet, decompiled in IDA, references this string exposes two static addresses which we can easily force into bool-true values.
 
 ```cpp
 void __fastcall RBX::throwIfNoInternalPermission(RBX *this)

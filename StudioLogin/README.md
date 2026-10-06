@@ -112,7 +112,7 @@ To determine the exact address of this call, we need to add another breakpoint. 
 
 ### Final Patch
 
-We apply the following patch to ensure that the function always returns a truish vaue.
+We apply the following patch to ensure that the function always returns a bool-true vaue.
 
 ```patch
 -00000001405F2100 | 0FB641 48                | movzx   eax, byte ptr ds:[rcx + 0x48]

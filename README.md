@@ -44,7 +44,7 @@ Items with a high _Clarity_ rating will contain "quick guides" and a primer on a
 | [Add Custom String Data in 2021E](./AddStrings2021E/)                                    | False | True  | 1.0     |
 | [Attachments Not Parented to a `PartInstance`](./AttachmentsNotParentedToPartInstances/) | False | True  | 0.7     |
 | [Force RCCService FFlags to Load](./RCCServiceFFlagsFetchPatch/)                         | N/A   | N/A   | 1.0     |
-| [Advanced Trust Check for 2018M](./AdvancedTrustCheck2018M/)                             | False | True  | 0.4     |
+| [Advanced Trust Check for 2018M](./AdvancedTrustCheck2018M/)                             | False | True  | 1.0     |
 | [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E/)                             | False | True  | 1.0     |
 | [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                  | False | False | 1.0     |
 | [Change Method Security Permissions](./ChangeMethodSecurityPermissions/)                 | N/A   | N/A   | 1.0     |
