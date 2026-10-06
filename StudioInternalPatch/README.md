@@ -16,7 +16,7 @@ In 2023, the way this was done was to find and replace a fixed signature in ``Ro
 + 41 80 be 50 01 00 00 00 90 90 e8
 ```
 
-In June 2025, `internal-studio-patcher` changed the process, so that it now:
+In June 2025, `internal-studio-patcher` changed the process, so that the patcher will now:
 
 1. searches in the `.data` and `.rdata` regions for a string `"VoiceChatEnableApiSecurityCheck"`, then
 

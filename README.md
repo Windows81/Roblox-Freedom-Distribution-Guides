@@ -36,42 +36,45 @@ Listed below are the directories in this repository, along with roughly how well
 
 Items with a high _Clarity_ rating will contain "quick guides" and a primer on additional findings to describe how we reached our conclusions.
 
-| Guide                                                                                         | Implemented | Clarity |
-| --------------------------------------------------------------------------------------------- | ----------- | ------- |
-| [Aep's Guide for 2018M](./Aep2018MGuide/)                                                     | True        | 0.9     |
-| [Jetray's Guide for 2021E <sub>need to derive relevant patches</sub>](./Jetray2021EGuide)     | True        | 0.7     |
-| [Worships' Guide for 2021E <sub>need to derive relevant patches</sub>](./Worships2021EGuide/) | True        | 0.7     |
-| [Add Custom String Data in 2021E](./AddStrings2021E/)                                         | True        | 1.0     |
-| [Attachments Not Parented to a `PartInstance`](./AttachmentsNotParentedToPartInstances/)      | True        | 0.7     |
-| [Force RCCService FFlags to Load](./RCCServiceFFlagsFetchPatch/)                              | N/A         | 1.0     |
-| [Advanced Trust Check for 2018M](./AdvancedTrustCheck2018M/)                                  | True        | 0.4     |
-| [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E/)                                  | True        | 1.0     |
-| [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                       | True        | 1.0     |
-| [Change Method Security Permissions](./ChangeMethodSecurityPermissions/)                      | N/A         | 1.0     |
-| [Bypass `--rbxsig...`](./BypassRbxsig/)                                                       | True        | 0.8     |
-| [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                            | False       | 0.4     |
-| [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                     | False       | 0.5     |
-| [Discriminate RCC Logs](./DiscriminateRCCLogs/)                                               | True        | 0.9     |
-| [Extract Core Roblox Assets](./ExtractRobloxCoreAssets/)                                      | True        | 0.7     |
-| [Bypass Video Limits](./BypassVideoLimits/)                                                   | True        | 1.0     |
-| [Populate Insert-Objects Widget for 2021E](./InsertObjects2021E/)                             | True        | 0.8     |
-| [Make Asset URLs Permissive](./MakeAssetURLsPermissive/)                                      | False       | 0.2     |
-| [Disable SOAP](./DisableSOAP/)                                                                | False       | 1.0     |
-| [Force Use of Simple HTTP](./ForceSimpleHTTP)                                                 | False       | 0.3     |
-| [Allow Multiple Simultaneous Clients](./AllowMultipleClients/)                                | True        | 1.0     |
-| [Fix Occasional Client Crashes](./FixOccasionalClientCrashes/)                                | True        | 1.0     |
-| [Constructive Solid Geometry (CSG) Research](./CSGv3Research/)                                | True        | 0.5     |
-| [Patch Materials](./PatchMaterials/)                                                          | True        | 1.0     |
-| [Bypass Transport-Layer Security (TLS) Verification](./PatchTLSVerification/)                 | True        | 1.0     |
-| [Enable Port Agnosticness](./EnablePortAgnosticness/)                                         | True        | 0.7     |
-| [Redirect App Data Directory](./RedirectAppDataDirectory/)                                    | True        | 0.8     |
-| [Enable Save Place](./EnableSavePlace/)                                                       | True        | 0.8     |
-| [Reclassify RakNet for Hostile ISPs](./ReclassifyRakNet/)                                     | True        | 1.0     |
-| [Fix Security Timeout](./FixSecurityTimeout/)                                                 | True        | 0.4     |
-| [Bypass Studio Login](./StudioLogin/)                                                         | True        | 1.0     |
-| [Support `MessagingService`](./SupportMessagingService/)                                      | False       | 0.4     |
-| [Support `task.wait`](./SupportTaskWait/)                                                     | True        | 0.8     |
-| [Fix `/Setting/QuietGet/%s/` to HTTPS](./FixQuietGetProtocol/)                                | True        | 0.8     |
-| [Keep RCC's Settings Key Constant](./ConstantiseRCCSettingsKey)                               | True        | 0.8     |
-| [Pending Research on Terrain](./Terrain/)                                                     | N/A         | 0.3     |
-| [Rearrange `./Content` Directory for Studio](./RearrangeContentFolder/)                       | True        | 0.8     |
+| Guide                                                                                    | v347  | v463  | Clarity |
+| ---------------------------------------------------------------------------------------- | ----- | ----- | ------- |
+| [Aep's Guide for 2018M](./Aep2018MGuide/)                                                | True  | False | 0.9     |
+| [Jetray's Guide for 2021E](./Jetray2021EGuide)                                           | False | True  | 0.7     |
+| [Worships' Guide for 2021E](./Worships2021EGuide/)                                       | N/A   | N/A   | 0.7     |
+| [Add Custom String Data in 2021E](./AddStrings2021E/)                                    | False | True  | 1.0     |
+| [Attachments Not Parented to a `PartInstance`](./AttachmentsNotParentedToPartInstances/) | False | True  | 0.7     |
+| [Force RCCService FFlags to Load](./RCCServiceFFlagsFetchPatch/)                         | N/A   | N/A   | 1.0     |
+| [Advanced Trust Check for 2018M](./AdvancedTrustCheck2018M/)                             | False | True  | 0.4     |
+| [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E/)                             | False | True  | 1.0     |
+| [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                  | False | False | 1.0     |
+| [Change Method Security Permissions](./ChangeMethodSecurityPermissions/)                 | N/A   | N/A   | 1.0     |
+| [Bypass `--rbxsig...` Checks](./BypassRbxsig/)                                           | True  | N/A   | 0.8     |
+| [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                       | False | False | 0.4     |
+| [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                | False | False | 0.5     |
+| [Disable SOAP](./DisableSOAP/)                                                           | False | True  | 1.0     |
+| [Discriminate RCC Logs](./DiscriminateRCCLogs/)                                          | False | True  | 0.9     |
+| [Manage FFlags](./ManageFFlags/)                                                         | N/A   | N/A   | 0.9     |
+| [Extract Core Roblox Assets](./ExtractRobloxCoreAssets/)                                 | False | True  | 0.7     |
+| [Bypass Video Limits](./BypassVideoLimits/)                                              | False | True  | 1.0     |
+| [Populate Insert-Objects Widget for 2021E](./InsertObjects2021E/)                        | False | True  | 0.8     |
+| [Make Asset URLs Permissive](./MakeAssetURLsPermissive/)                                 | False | False | 0.2     |
+| [Disable SOAP](./DisableSOAP/)                                                           | True  | True  | 1.0     |
+| [Force Use of Simple HTTP](./ForceSimpleHTTP)                                            | False | False | 0.3     |
+| [Allow Multiple Simultaneous Clients](./AllowMultipleClients/)                           | True  | True  | 1.0     |
+| [Fix Occasional Client Crashes](./FixOccasionalClientCrashes/)                           | False | True  | 1.0     |
+| [Constructive Solid Geometry (CSG) Research](./CSGv3Research/)                           | False | True  | 0.5     |
+| [Patch Materials](./PatchMaterials/)                                                     | True  | True  | 1.0     |
+| [Bypass Transport-Layer Security (TLS) Verification](./PatchTLSVerification/)            | False | True  | 1.0     |
+| [Enable Port Agnosticness](./EnablePortAgnosticness/)                                    | False | True  | 0.7     |
+| [Redirect App Data Directory](./RedirectAppDataDirectory/)                               | True  | True  | 0.8     |
+| [Enable Save Place](./EnableSavePlace/)                                                  | False | True  | 0.8     |
+| [Reclassify RakNet for Hostile ISPs](./ReclassifyRakNet/)                                | True  | True  | 1.0     |
+| [Fix Security Timeout](./FixSecurityTimeout/)                                            | False | True  | 0.4     |
+| [Bypass Studio Login](./StudioLogin/)                                                    | True  | True  | 1.0     |
+| [Support `MessagingService`](./SupportMessagingService/)                                 | False | False | 0.4     |
+| [Studio Internal Patch](./StudioInternalPatch/)                                          | False | True  | 0.6     |
+| [Support `task.wait`](./SupportTaskWait/)                                                | N/A   | N/A   | 0.8     |
+| [Fix `/Setting/QuietGet/%s/` to HTTPS](./FixQuietGetProtocol/)                           | True  | False | 0.8     |
+| [Keep RCC's Settings Key Constant](./ConstantiseRCCSettingsKey)                          | True  | True  | 0.8     |
+| [Pending Research on Terrain](./Terrain/)                                                | N/A   | N/A   | 0.3     |
+| [Rearrange `./Content` Directory for Studio](./RearrangeContentFolder/)                  | True  | True  | 0.8     |

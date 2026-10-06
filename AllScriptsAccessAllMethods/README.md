@@ -116,7 +116,7 @@ game.HttpService:RequestInternal({Url = "https://google.com"}):Start(function(su
  00844987 | 803D DC905302 00         | cmp byte ptr ds:[25390DC],0             |
 ```
 
-If you're using x32dbg on 32-bit Rōblox, there should be 17 patches here total.
+If you're using x32dbg on 32-bit Rōblox, _here_ should be done 17 patched bytes total.
 
 ---
 

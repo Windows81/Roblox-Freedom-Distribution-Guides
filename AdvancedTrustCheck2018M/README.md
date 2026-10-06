@@ -73,9 +73,10 @@ However, we need to find the function first. To do so, there are some strings th
 - `"accounts.google.com"`
 - `"/serviceloginauth"`
 
-_Using a code-analysis tool such as x32dbg_, we only need to look for user-module references to one these strings; I chose `"robloxlabs.com"`.
+_Using a code-analysis tool such as x32dbg_, we only need to look for user-module references to one these strings; I chose to do this twice, each on a different function:
 
-Once I found that string, I made sure that I could find at least one of the other strings that appear on that list.
+- one with a string reference to `"/serviceloginauth"`, and
+- one with a string reference to `"login.facebook.com"`
 
 ### Patching in x86
 

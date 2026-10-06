@@ -115,11 +115,11 @@ To determine the exact address of this call, we need to add another breakpoint. 
 We apply the following patch to ensure that the function always returns a truish vaue.
 
 ```patch
--00000001405F2100 | 0FB641 48                | movzx   eax, byte ptr ds:[rcx + 0x48]   | rcx+48:AmdPowerXpressRequestHighPerformance+1C083C
-+00000001405F2100 | 0C FF                    | or      al, 0xFF                        |
-+00000001405F2102 | 90                       | nop                                     |
-+00000001405F2103 | 90                       | nop                                     |
- 00000001405F2104 | C3                       | ret                                     |
+-00000001405F2100 | 0FB641 48                | movzx   eax, byte ptr ds:[rcx + 0x48]
++00000001405F2100 | 0C FF                    | or      al, 0xFF
++00000001405F2102 | 90                       | nop
++00000001405F2103 | 90                       | nop
+ 00000001405F2104 | C3                       | ret
 ```
 
 ### Confirmation via the v548 PDBs
@@ -284,17 +284,21 @@ loginSuccessVTable.__vftable = (QObject_vtbl *)ILoginManager::loginSuccess;
 
 Observing this code snippet, I notice that:
 
-- The nearest string to the reference statement is _up_;
-  - **Begin your search at a statement reading a string _ending_ in `"getLoggedInUser()"` and continue searching down.**
-- After a quick succession of Qt calls, the reference statement precedes `QByteArray::~QByteArray` by a few lines.
-  - **Narrow your search to begin at a `call qword ptr ds:[<public: __cdecl QByteArray::~QByteArray(void)>]`.**
-  - Note that x64dbg automatically populates Qt function names.
-- The reference statement is immediately before some dynamic memory allocation of 0x18 bytes which precedes a null-check if-block;
-  - **End your search at a `call` which closely precedes a `test rax,rax`, and**
-  - **Look _immediately before_ any statement which references 0x18 as a constant.**
-- Of course, the function address is being _read_, not called on, so your function address at a `lea rXX,qword ptr[XXX]` instruction.
+- The nearest string to the reference statement is _above_;
+  - **You should begin your search at a statement reading a string _ending_ in `"getLoggedInUser()"` and continue searching down.**
 
-In Studio v463, the address of `ILoginManager::loginSuccess` is `1402FD6D0`.
+- After a quick succession of Qt calls, the reference statement precedes `QByteArray::~QByteArray` by a few lines.
+  - **So tighten your search to begin at a `call qword ptr ds:[<public: __cdecl QByteArray::~QByteArray(void)>]`.**
+  - Note that x64dbg automatically populates Qt function names.
+
+- The reference statement is immediately before some dynamic memory allocation of 0x18 bytes which precedes a null-check if-block;
+  - **Terminate your search at a `call` which closely precedes a `test rax,rax`, and**
+  - **Observe _immediately before_ any statement which references 0x18 as a constant.**
+
+- Of course, the function address is being _read_, not called on.
+  - **So your function address at an instruction like `lea rXX,qword ptr[XXXXXXXXX]`.**
+
+In Studio v463, the head address of `ILoginManager::loginSuccess` is `1402FD6D0`.
 
 ### Placing the call to `ILoginManager::loginSuccess`
 
