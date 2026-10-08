@@ -68,6 +68,6 @@ void ContentProvider::verifyScriptSignature(const ProtectedString& source, bool 
 }
 ```
 
-This guide is designed to have this function return before anything else can execute.
+This guide is designed to have this function return void before anything else can execute.
 
 Since the return type is void, we do not need to include any instructions prior to the `ret`.

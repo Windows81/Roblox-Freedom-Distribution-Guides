@@ -12,7 +12,7 @@ Using x32dbg, search in user-referenced string for `"/Setting/QuietGet/%s/"`. Th
 | ---------- | ------------------------- | -------------- | ------------------------- |
 | `00C336AF` | `push rccservice.119E298` | `0119E298`     | `"/Setting/QuietGet/%s/"` |
 
-The scroll up a couple pages and patch the conditional-move statement out, so that `edx` is always set to `"https"`:
+The scroll up a couple dozen lines and patch the conditional-move statement out, so that `edx` is always set to `"https"`:
 
 ```patch
  00C3361E | BA 1CEB0B01              | mov edx,rccservice.10BEB1C   | 10BEB1C:"https"
