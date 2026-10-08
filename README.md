@@ -49,6 +49,7 @@ Items with a high _Clarity_ rating will contain "quick guides" and a primer on a
 | [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                  | False | False | 1.0     |
 | [Change Method Security Permissions](./ChangeMethodSecurityPermissions/)                 | N/A   | N/A   | 1.0     |
 | [Bypass `--rbxsig...` Checks](./BypassRbxsig/)                                           | True  | N/A   | 0.8     |
+| [Bypass `"Important !Loading shader files"` Bogusness](./BypassBogusMessage/)            | True  | True  | 0.8     |
 | [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                       | False | False | 0.4     |
 | [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                | False | False | 0.5     |
 | [Disable SOAP](./DisableSOAP/)                                                           | False | True  | 1.0     |

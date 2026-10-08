@@ -18,38 +18,11 @@ The first patch in Aep's guide was not very complicated. However, VisualPlugin l
 
 ## Solution for (1.2)
 
-The second patch in Aep's guide _does_ require an x86 patch (for now).
-
-1. Open the `RobloxPlayerBeta.exe` in x32dbg.
-
-2. Search for references to `"Loading shader files"` as a _user-module_ string. One result should appear.
-
-3. Click on this result. There should again be a `je` above `"Important !Loading shader files"`.
-
-4. Change the `je` to a `jmp`.
-
-### Why?
-
-By forcibly skipping the if-statement, this patch addresses this code behaviour as outlined [in the 2016 source](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/WindowsClient/Application.cpp#L1104C1-L1115C2).
-
-```cpp
-// Inform client to tell server to disconnect game if we are not a signed
-void Application::setWindowFrame()
-{
-#if !defined(LOVE_ALL_ACCESS) && !defined(_DEBUG) && !defined(_NOOPT) && !defined(RBX_STUDIO_BUILD)
-	if(!::VerifyCryptSignature(utf8_decode(moduleFilename)))
-	{
-		// bugus message for security reasons
-		RBX::StandardOut::singleton()->print(RBX::MESSAGE_ERROR, "Important !Loading shader files");
-		RBX::DataModel::sendStats |= HATE_SIGNATURE;
-	}
-#endif
-}
-```
+_Refer to [VisualPlugin's `"Important !Loading shader files"` guide](../BypassBogusMessage/) for the solution._
 
 ## Solution for (2)
 
-**Refer to [VisualPlugin's trust-check-bypass guide](../AdvancedTrustCheck2018M/) for the solution.**
+_Refer to [VisualPlugin's trust-check-bypass guide](../AdvancedTrustCheck2018M/) for the solution._
 
 ### Why?
 
