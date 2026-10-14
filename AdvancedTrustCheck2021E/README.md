@@ -448,7 +448,7 @@ The way `libcurl` typically works is by instantiating an object and modifying pr
 
 How would we find `curl_easy_setopt`?
 
-The actual function which sets the `CURLOPT` isn't in the function call _below_ the string references, but instead above. That's because cURL options are actually defined as enum integers.
+The actual function which sets the `CURLOPT_...` isn't in the function call _below_ the string references, but instead above. That's because cURL options are actually defined as enum integers.
 
 For example, in [the 2016 source code](https://github.com/Artifaqt/ROBLOX2016/blob/e0cfac59fea3a5b986843e65b0fda286e439f9fc/App/util/Shared/HttpPlatformImpl.cpp#L641):
 

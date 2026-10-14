@@ -52,7 +52,7 @@ Items with a high _Clarity_ rating will contain "quick guides" and a primer on a
 | [Bypass `"Important !Loading shader files"` Bogusness](./BypassBogusMessage/)            | True  | True  | 0.8     |
 | [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                       | False | False | 0.4     |
 | [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                | False | False | 0.5     |
-| [Disable SOAP](./DisableSOAP/)                                                           | False | True  | 1.0     |
+| [Disable SOAP](./DisableSOAP/)                                                           | True  | True  | 1.0     |
 | [Discriminate RCC Logs](./DiscriminateRCCLogs/)                                          | False | True  | 0.9     |
 | [Manage FFlags](./ManageFFlags/)                                                         | N/A   | N/A   | 0.9     |
 | [Extract Core Roblox Assets](./ExtractRobloxCoreAssets/)                                 | False | True  | 0.7     |
