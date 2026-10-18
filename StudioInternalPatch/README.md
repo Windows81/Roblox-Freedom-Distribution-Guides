@@ -9,7 +9,7 @@ It also gives creators the following powers, among potentially others:
 
 ## Prior Research
 
-In 2023, the way this was done was to find and replace a fixed signature in ``RobloxStudioBeta.exe`. This is how [7ap's `internal-studio-patcher`](https://github.com/7ap/internal-studio-patcher/blob/dc3dc1cabc75599239fc1eab84b180335068f1d8/src/main.rs) did it:
+In 2023, the way this was done was to find and replace a fixed signature in `RobloxStudioBeta.exe`. This is how [7ap's `internal-studio-patcher`](https://github.com/7ap/internal-studio-patcher/blob/dc3dc1cabc75599239fc1eab84b180335068f1d8/src/main.rs) did it:
 
 ```patch
 - 41 80 be 50 01 00 00 00 74 05 e8
