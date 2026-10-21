@@ -10,4 +10,4 @@ build:
 
   commands:
     - mkdir --parents $READTHEDOCS_OUTPUT/html/
-    - find.exe -maxdepth 1 -type d -name _readthedocs | xargs cp --recursive -t $READTHEDOCS_OUTPUT/html/
+    - find -maxdepth 1 -type d -name _readthedocs | xargs cp --recursive -t $READTHEDOCS_OUTPUT/html/
