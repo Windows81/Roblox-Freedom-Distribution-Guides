@@ -6,7 +6,7 @@ I then did took the patches from [this guide](../Worships2021EGuide) and made a 
 
 Dum Rōblox decided that they won't load `./Content/models/DataModelPatch/DataModelPatch.rbxm` if it's been modified. Not to worry; I patched the signing requirement out.
 
-Refer to [`./DataModelPatchPatch.1337`](./DataModelPatchPatch.1337). Import it into **x32**dbg or something!
+Refer to [`./v463-player.1337`](./v463-player.1337). Import it into **x32**dbg or something!
 
 [](image-2.png)
 

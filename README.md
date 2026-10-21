@@ -12,7 +12,7 @@ Rōblox Freedom Distribution (RFD) began its development in June 2023 using `exe
 
 I have taken care to locate the original sources so as to create a complete lineage of Freedom Distribution's patches.
 
-Consult [`./_misc/haxdiff/`](./_misc/haxdiff/) for more info; updated at _soonest_ 2026-10-01 (RFD 0.68.3).
+Consult [`./_misc/haxdiff/`](https://github.com/Windows81/Roblox-Freedom-Distribution-Guides/tree/main/_misc/haxdiff) for more info; updated at _soonest_ 2026-10-04 (RFD 0.68.4).
 
 ### Version 347 (2018M)
 
