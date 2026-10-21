@@ -10,4 +10,4 @@ build:
 
   commands:
     - mkdir --parents $READTHEDOCS_OUTPUT/html/
-    - find -maxdepth 1 -type d -not -name _readthedocs | xargs cp --recursive -t $READTHEDOCS_OUTPUT/html/
+    - find -mindepth 1 -maxdepth 1 -type d -not -name _readthedocs | xargs cp --recursive -t $READTHEDOCS_OUTPUT/html/
