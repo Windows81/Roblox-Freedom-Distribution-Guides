@@ -20,7 +20,7 @@ This should be a simple patch.
 
 3. Navigate to the `call` result and copy the _destination_ address (i.e., `586DD0`).
 
-4. If your destination appears in the _middle_ of an instruction, just hit _Ctrl + 9_ to replace all its bytes with `nop`.
+4. _Do not scroll up or down_, as x32dbg may confuse random bytes above the head of your function for other instructions, and then your destination appears in the middle of an instruction.
 
 5. Replace the instruction at the address from step (3) with `ret`.
 
