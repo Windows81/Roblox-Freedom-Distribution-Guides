@@ -5,8 +5,22 @@ Their purpose is to allow easier triage of problematic FFlag options on Rōblox 
 ### To Load All Default FFlags
 
 ```py
+# for Rōblox Freedom Distribution's 2018M version:
+import requests
+ALL_DEFAULTS = {k:v[1] for k,v in requests.get('https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/raw/651332612610c3484a1785f130c8d057efe02fae/test/v348-player.json').json().items()}
+```
+
+```py
+# for Rōblox Freedom Distribution's 2021E version:
 import requests
 ALL_DEFAULTS = {k:v[1] for k,v in requests.get('https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/raw/651332612610c3484a1785f130c8d057efe02fae/test/v463-player.json').json().items()}
+```
+
+Then you may need to remove certain flags from the evaluation pool if your revival demands their values remain constant.
+
+```py
+ALL_DEFAULTS.pop('FFlagDebugLocalRccServerConnection', None)
+ALL_DEFAULTS.pop('DFFlagCLI120342', None)
 ```
 
 ### To Load a JSON File with FFlags
@@ -19,12 +33,12 @@ def load_json(path: str) -> dict:
 	r = json.load(open(path))
 	return r.get('applicationSettings', r)
 
-j1 = load_json('./v463-flags-0-66-5.json')  # for example
+j1 = load_json(r'./v463-flags-0-66-5.json')  # for example
 ```
 
 ### To Filter Invalid or Already-Default FFlag Values
 
-Filter the following out:
+Filters the following out:
 
 - **invalid**: i.e. that the FFlag value is not included in `ALL_DEFAULTS`
 - **"already-default"**: i.e. that the FFlag value in your table is identical to that of `ALL_DEFAULTS`
@@ -39,6 +53,23 @@ def filter_in_place(t: dict):
 			del t[k]
 
 filter_in_place(j1)  # for example
+```
+
+### To Built the Anti-FFlag Table
+
+You may want to invert all boolean FFlag values.
+
+```py
+def get_inverted_flags(t: dict):
+	r = {}
+	for k, v in list(t.items()):
+		if isinstance(v, bool):
+			r[k] = not v
+		else:
+			r[k] = v
+	return r
+
+j2 = get_inverted_flags(j1)  # for example
 ```
 
 ### To Create Interpolated Value Dict
@@ -89,15 +120,15 @@ copy_json(j_50_percent)  # for example
 
 ### To Copy Result as TOML 1.1 Dict
 
-This option is specifically tailored for Rōblox Freedom Distribution 0.68.0 and later. Refer to info on config option [`server_core.roblox_setting_overrides`](https://github.com/Windows81/Roblox-Freedom-Distribution#server_coreroblox_setting_overrides).
+This option is specifically tailored for Rōblox Freedom Distribution 0.68.0 and later. Refer to info on config option [`server_core.roblox_setting_overrides`](https://github.com/Windows81/Roblox-Freedom-Distribution#server_coreroblox_setting_overrides). In RFD, the full TOML key is `server_core.roblox_setting_overrides`.
 
 ```py
 def copy_toml(t: dict):
 	import pyclip
 	import json
 	pyclip.copy(
-		'server_core.roblox_setting_overrides = {\n' +
-		''.join(f'    %s = %s,\n' % (k, json.dumps(v)) for k, v in t.items()) +
+		'roblox_setting_overrides = {\n' +
+		''.join(f'    %s = %s,\n' % (k, json.dumps(v)) for k, v in t.items() if v is not None) +
 		'}'
 	)
 
