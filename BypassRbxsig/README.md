@@ -11,14 +11,14 @@ This should be a simple patch.
 | `00586EDA` | `mov ecx,__robloxplayerbeta.1140914` | `01140914`     | `"--rbxsig2%"` |
 | `00586EDF` | `mov eax,__robloxplayerbeta.1140908` | `01140908`     | `"--rbxsig%"`  |
 
-2. From that result, select the previous 25 lines, then right-click, navigate to _Find references to_, then go to _Selected address(es)_. Two results emerge in v347.
+2. From that result, select the previous 25 lines, then right-click, navigate to _Find references to_, then go to _Selected address(es)_. Two results emerge when using v347.
 
 | Address    | Disassembly                      |
 | ---------- | -------------------------------- |
 | `004ED3DC` | `call __robloxplayerbeta.586DD0` |
 | `00586DF8` | `jb __robloxplayerbeta.586DFC`   |
 
-3. Navigate to the `call` result and copy the _destination_ address (i.e., `586DD0`).
+3. Navigate to _the `call` result_ and copy the _destination_ address (i.e., `586DD0`).
 
 4. _Do not scroll up or down_, as x32dbg may confuse random bytes above the head of your function for other instructions, and then your destination appears in the middle of an instruction.
 

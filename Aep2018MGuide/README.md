@@ -12,9 +12,7 @@ Let's _simplify_ this!
 
 ## Solution for (1.1)
 
-The first patch in Aep's guide was not very complicated. However, VisualPlugin later discovered that its effects can be exactly replicated just by:
-
-- **setting `FFlag::DebugLocalRccServerConnection` to `true`**
+_Refer to [VisualPlugin's version-hash-check-bypass guide](../WorkAroundVersionHashing2018M/) for the solution._
 
 ## Solution for (1.2)
 

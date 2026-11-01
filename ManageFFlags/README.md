@@ -5,13 +5,13 @@ Their purpose is to allow easier triage of problematic FFlag options on Rōblox 
 ### To Load All Default FFlags
 
 ```py
-# for Rōblox Freedom Distribution's 2018M version:
+# for Rōblox Freedom Distribution's 2018M player:
 import requests
 ALL_DEFAULTS = {k:v[1] for k,v in requests.get('https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/raw/651332612610c3484a1785f130c8d057efe02fae/test/v348-player.json').json().items()}
 ```
 
 ```py
-# for Rōblox Freedom Distribution's 2021E version:
+# for Rōblox Freedom Distribution's 2021E player:
 import requests
 ALL_DEFAULTS = {k:v[1] for k,v in requests.get('https://github.com/Windows81/Roblox-x64dbg-FFlag-Extractor/raw/651332612610c3484a1785f130c8d057efe02fae/test/v463-player.json').json().items()}
 ```
