@@ -43,14 +43,14 @@ Items with a high _Clarity_ rating will contain "quick guides" and a primer on a
 | [Worships' Guide for 2021E](./Worships2021EGuide/)                                       | N/A   | N/A   | 0.7     |
 | [Add Custom String Data in 2021E](./AddStrings2021E/)                                    | False | True  | 1.0     |
 | [Attachments Not Parented to a `PartInstance`](./AttachmentsNotParentedToPartInstances/) | False | True  | 0.7     |
-| [Advanced Trust Check for 2018M](./AdvancedTrustCheck2018M/)                             | False | True  | 1.0     |
-| [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E/)                             | False | True  | 1.0     |
-| [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                  | False | False | 1.0     |
+| [Force RCCService FFlags to Load](./RCCServiceFFlagsFetchPatch/)                         | N/A   | N/A   | 1.0     |
+| [Advanced Trust Check for 2018M](./AdvancedTrustCheck2018M/)          | [Advanced Trust Check for 2021E](./AdvancedTrustCheck2021E/)                             | False | True  | 1.0     |
+| [Give All Scripts Access to All Methods](./AllScriptsAccessAllMethods/)                  | False | True  | 1.0     |
 | [Change Method Security Permissions](./ChangeMethodSecurityPermissions/)                 | N/A   | N/A   | 1.0     |
 | [Bypass `--rbxsig...` Checks](./BypassRbxsig/)                                           | True  | N/A   | 0.8     |
 | [Bypass `"Important !Loading shader files"` Bogusness](./BypassBogusMessage/)            | True  | True  | 0.8     |
-| [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                       | False | False | 0.4     |
-| [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                | False | False | 0.5     |
+| [Patch Client 2021E `DataModelPatch.rbxm`](./PatchDataModelPatch/)                       | False | True  | 0.4     |
+| [Disable Gòógle Analytricks](./DisableGoogleAnalytricks/)                                | True  | True  | 0.5     |
 | [Disable SOAP](./DisableSOAP/)                                                           | True  | True  | 1.0     |
 | [Discriminate RCC Logs](./DiscriminateRCCLogs/)                                          | False | True  | 0.9     |
 | [Manage and Triage FFlags](./ManageFFlags/)                                              | N/A   | N/A   | 0.9     |
@@ -62,7 +62,7 @@ Items with a high _Clarity_ rating will contain "quick guides" and a primer on a
 | [Force Use of Simple HTTP](./ForceSimpleHTTP)                                            | False | False | 0.3     |
 | [Allow Multiple Simultaneous Clients](./AllowMultipleClients/)                           | True  | True  | 1.0     |
 | [Fix Occasional Client Crashes](./FixOccasionalClientCrashes/)                           | False | True  | 1.0     |
-| [Constructive Solid Geometry (CSG) Research](./CSGv3Research/)                           | False | True  | 0.5     |
+| [Constructive Solid Geometry (CSG) Research](./CSGv3Research/)                           | N/A   | N/A   | 0.5     |
 | [Patch Materials](./PatchMaterials/)                                                     | True  | True  | 1.0     |
 | [Bypass Transport-Layer Security (TLS) Verification](./PatchTLSVerification/)            | False | True  | 1.0     |
 | [Enable Port Agnosticness](./EnablePortAgnosticness/)                                    | False | True  | 0.7     |
